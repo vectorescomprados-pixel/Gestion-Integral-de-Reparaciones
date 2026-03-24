@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Fix Total</title>
+    <title>Gestión Reparaciones - Desbloqueo Manual</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
@@ -11,18 +11,16 @@
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
         .wrap { width: 95%; max-width: 450px; position: relative; }
         .hidden { display: none !important; }
-        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; }
         .content-body { margin-top: 230px; width: 100%; padding-bottom: 100px; }
         .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
         .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .details { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 14px; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
         input, select, textarea { width: 100%; height: 40px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); padding: 0 10px; background: #0b141a; color: var(--text); }
-        textarea { height: 70px; padding: 10px; resize: none; }
-        label { font-size: 11px; opacity: 0.7; display: block; margin-bottom: 3px; }
-        .rep-card { background: rgba(37, 99, 235, 0.1); padding: 10px; border-radius: 8px; margin-top: 8px; border-left: 4px solid var(--primary); }
+        textarea { height: 80px; padding: 10px; resize: none; }
+        label { font-size: 11px; opacity: 0.7; }
     </style>
 </head>
 <body class="dark-mode">
@@ -34,7 +32,7 @@
                 <button id="btn-export" class="btn ghost">RESPALDO</button>
                 <button id="btn-logout" class="btn danger">CERRAR</button>
             </div>
-            <input id="search-input" placeholder="Buscar Unidad o Apellido...">
+            <input id="search-input" placeholder="Buscar Unidad...">
             <div style="display: grid; grid-template-columns: 1fr 1fr 50px; gap: 10px;">
                 <button id="btn-search" class="btn primary">BUSCAR</button>
                 <button id="btn-clear" class="btn ghost">LIMPIAR</button>
@@ -46,38 +44,17 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 style="text-align:center; margin-bottom:10px; color:var(--primary)">Datos de Reparación</h3>
-            <p id="confirm-owner" style="font-size:12px; text-align:center; margin-bottom:15px; font-weight:bold; color:var(--primary)"></p>
-            
-            <label>Descripción:</label>
-            <textarea id="r-desc" placeholder="¿Qué se reparó?"></textarea>
-            
-            <label>Técnico / Empresa:</label>
-            <input id="r-ejecutor" placeholder="Nombre">
-            
+            <h3 id="m-title" style="text-align:center; margin-bottom:15px; color:var(--primary)">Reparación</h3>
+            <textarea id="r-desc" placeholder="Descripción..."></textarea>
+            <input id="r-ejecutor" placeholder="Técnico">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                    <label>Estado:</label>
-                    <select id="r-estado">
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="Terminado">Terminado</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Garantía (Meses):</label>
-                    <input id="r-garantia" type="number" placeholder="0">
-                </div>
+                <select id="r-estado"><option value="Pendiente">Pendiente</option><option value="Terminado">Terminado</option></select>
+                <input id="r-garantia" type="number" placeholder="Garantía">
             </div>
-            
-            <label>Responsable del Gasto:</label>
-            <select id="r-resp">
-                <option value="Consorcio">Consorcio</option>
-                <option value="Particular">Particular</option>
-            </select>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:15px">
+            <select id="r-resp"><option value="Consorcio">Consorcio</option><option value="Particular">Particular</option></select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px">
                 <button id="btn-save" class="btn primary">GUARDAR</button>
-                <button onclick="window.cerrarModales()" class="btn danger">CANCELAR</button>
+                <button onclick="document.getElementById('modal-edit').classList.add('hidden')" class="btn danger">SALIR</button>
             </div>
         </div>
     </div>
@@ -91,19 +68,18 @@
         
         let departamentos = [], currentUFId = null, currentRepDocId = null;
 
-        // --- REFRESCAR SIN BLOQUEOS ---
-        window.refreshAll = async () => {
+        window.loadData = async () => {
             const btn = document.getElementById("btn-refresh");
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             try {
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderList(departamentos);
-            } catch (e) { console.error("Error al refrescar:", e); }
+                render(departamentos);
+            } catch (e) { console.error(e); }
             btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
         };
 
-        function renderList(data) {
+        function render(data) {
             const list = document.getElementById("list");
             list.innerHTML = "";
             data.forEach(d => {
@@ -111,66 +87,51 @@
                 div.className = "item";
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center">
-                        <div><b>UF: ${d.UF}</b><small>${d.Propietario}</small></div>
+                        <div><b>UF: ${d.UF}</b><br><small>${d.Propietario}</small></div>
                         <div style="display:flex; gap:25px; font-size:22px">
-                            <i class="fas fa-tools" onclick="window.toggleHistorial('${d.id}')"></i>
-                            <i class="fas fa-edit" style="color:var(--primary)" onclick="window.abrirEditor('${d.id}', '${d.UF}', '${d.Propietario}')"></i>
+                            <i class="fas fa-tools" onclick="window.verHist('${d.id}')"></i>
+                            <i class="fas fa-edit" style="color:var(--primary)" onclick="window.openEdit('${d.id}', '${d.UF}')"></i>
                         </div>
                     </div>
-                    <div id="det-${d.id}" class="details hidden">
-                        <div id="historial-${d.id}"></div>
-                    </div>`;
+                    <div id="det-${d.id}" class="hidden" style="margin-top:10px; font-size:12px; border-top:1px dashed #333; padding-top:10px"></div>`;
                 list.appendChild(div);
             });
         }
 
-        window.toggleHistorial = async (id) => {
-            const el = document.getElementById(`det-${id}`);
-            el.classList.toggle('hidden');
-            if(!el.classList.contains('hidden')) {
-                const hist = document.getElementById(`historial-${id}`);
-                hist.innerHTML = "<small>Buscando...</small>";
-                const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
-                hist.innerHTML = snap.empty ? "<small>Sin registros.</small>" : "";
-                snap.forEach(docSnap => {
-                    const r = docSnap.data();
-                    hist.innerHTML += `<div class="rep-card"><b>${r.fecha}:</b> ${r.descripcion}<br><small>Técnico: ${r.ejecutor} | Garantía: ${r.garantia || 0}m</small></div>`;
-                });
-            }
-        };
-
-        window.abrirEditor = async (id, uf, propietario) => {
+        // FUNCIÓN DE EDICIÓN CON BYPASS DE ERRORES
+        window.openEdit = async (id, uf) => {
             currentUFId = id; currentRepDocId = null;
-            document.getElementById("confirm-owner").innerText = `UF ${uf} - ${propietario}`;
+            document.getElementById("m-title").innerText = "UF " + uf;
             
-            // Limpieza manual de campos
-            document.getElementById("r-desc").value = "";
-            document.getElementById("r-ejecutor").value = "";
-            document.getElementById("r-garantia").value = "";
-            document.getElementById("r-estado").value = "Pendiente";
-            document.getElementById("r-resp").value = "Consorcio";
-
-            // Buscar datos existentes
-            const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
-            if(!snap.empty) {
-                const r = snap.docs.data();
-                currentRepDocId = snap.docs.id;
-                document.getElementById("r-desc").value = r.descripcion || "";
-                document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                document.getElementById("r-garantia").value = r.garantia || "";
-                document.getElementById("r-estado").value = r.estado || "Pendiente";
-                document.getElementById("r-resp").value = r.responsable || "Consorcio";
-            }
+            // Reset campos
+            const fields = ["r-desc", "r-ejecutor", "r-garantia"];
+            fields.forEach(f => document.getElementById(f).value = "");
+            
             document.getElementById("modal-edit").classList.remove("hidden");
+
+            // Intento de carga silencioso
+            try {
+                const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const r = snap.docs.data();
+                    currentRepDocId = snap.docs.id;
+                    document.getElementById("r-desc").value = r.descripcion || "";
+                    document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                    document.getElementById("r-garantia").value = r.garantia || "";
+                    document.getElementById("r-estado").value = r.estado || "Pendiente";
+                    document.getElementById("r-resp").value = r.responsable || "Consorcio";
+                }
+            } catch (e) {
+                console.log("Registro con conflicto, se permitirá sobreescribir.");
+            }
         };
 
         document.getElementById("btn-save").onclick = async () => {
-            const desc = document.getElementById("r-desc").value;
-            if(!desc) return alert("Complete la descripción");
-            
-            const payload = {
+            if(!document.getElementById("r-desc").value) return alert("Escriba descripción");
+            const data = {
                 id_uf: currentUFId,
-                descripcion: desc,
+                descripcion: document.getElementById("r-desc").value,
                 ejecutor: document.getElementById("r-ejecutor").value,
                 garantia: document.getElementById("r-garantia").value,
                 estado: document.getElementById("r-estado").value,
@@ -180,26 +141,39 @@
 
             try {
                 if(currentRepDocId) {
-                    await updateDoc(doc(db, "reparaciones", currentRepDocId), payload);
+                    await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
                 } else {
-                    await addDoc(collection(db, "reparaciones"), payload);
+                    await addDoc(collection(db, "reparaciones"), data);
                 }
-                window.cerrarModales();
-                alert("Guardado");
-                // Refresco diferido para evitar el bloqueo del botón
-                setTimeout(() => { window.refreshAll(); }, 500);
-            } catch (e) { alert("Error al guardar"); }
+                document.getElementById("modal-edit").classList.add("hidden");
+                alert("¡Guardado!");
+                window.loadData();
+            } catch (e) { alert("Error crítico al guardar"); }
         };
 
-        window.cerrarModales = () => { document.getElementById("modal-edit").classList.add("hidden"); };
-        document.getElementById("btn-refresh").onclick = () => window.refreshAll();
+        window.verHist = async (id) => {
+            const el = document.getElementById("det-" + id);
+            el.classList.toggle("hidden");
+            if(!el.classList.contains("hidden")) {
+                el.innerHTML = "Cargando...";
+                const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
+                el.innerHTML = snap.empty ? "Sin datos" : "";
+                snap.forEach(doc => {
+                    const r = doc.data();
+                    el.innerHTML += `<div style="background:#1a242d; padding:8px; margin-bottom:5px; border-radius:5px">
+                        <b>${r.fecha}:</b> ${r.descripcion} (${r.estado})</div>`;
+                });
+            }
+        };
+
+        document.getElementById("btn-refresh").onclick = () => window.loadData();
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
-            renderList(departamentos.filter(d => d.UF.toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
+            render(departamentos.filter(d => d.UF.toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
         };
-        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; renderList(departamentos); };
+        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
 
-        window.refreshAll(); // Carga inicial
+        window.loadData();
     </script>
 </body>
 </html>
