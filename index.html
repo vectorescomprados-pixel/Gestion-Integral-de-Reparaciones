@@ -1,63 +1,197 @@
-﻿// --- FUNCION CORREGIDA PARA EDITAR O CREAR ---
-window.nuevaReparacion = async (docId, uf) => {
-    currentUFId = docId;
-    document.getElementById("edit-title").innerText = `Gestionar Reparación UF: ${uf}`;
-    
-    // 1. Limpiamos el formulario por defecto
-    document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
-    document.getElementById("r-estado").value = "Pendiente";
-    document.getElementById("r-resp").value = "Consorcio";
+﻿<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
+    <title>Gestión Reparaciones Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; --warning: #f59e0b; --success: #22c55e; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        .wrap { width: 95%; max-width: 450px; position: relative; }
+        .hidden { display: none !important; }
+        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .content-body { margin-top: 230px; width: 100%; padding-bottom: 100px; }
+        .grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+        .grid-btns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
+        #btn-rocket { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; z-index: 5000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 20px; border: 2px solid white; display: none; align-items: center; justify-content: center; }
+        .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); width: 100%; }
+        .item b { font-size: 16px; color: var(--primary); display: block; margin-bottom: 5px; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+        input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: #0b141a; color: var(--text); }
+        textarea { height: 70px; padding: 10px; resize: none; }
+        .ficha-label { color: var(--primary); font-weight: bold; display: block; margin-top: 8px; font-size: 13px; }
+        .rep-entry { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary); font-size: 14px; }
+    </style>
+</head>
+<body>
 
-    // 2. Buscamos si ya existe una reparación para esta UF para cargar los datos
-    const q = query(collection(db, "reparaciones"), where("id_uf", "==", docId));
-    const snap = await getDocs(q);
-    
-    if (!snap.empty) {
-        // Si existe, cargamos los datos del primer registro encontrado
-        const data = snap.docs.data();
-        document.getElementById("r-desc").value = data.descripcion || "";
-        document.getElementById("r-ejecutor").value = data.ejecutor || "";
-        document.getElementById("r-estado").value = data.estado || "Pendiente";
-        document.getElementById("r-garantia").value = data.garantia || "";
-        document.getElementById("r-resp").value = data.responsable || "Consorcio";
-        document.getElementById("r-obs").value = data.observaciones || "";
-        // Guardamos el ID del documento de reparación para actualizarlo luego
-        window.currentRepId = snap.docs.id; 
-    } else {
-        window.currentRepId = null; // Es un registro nuevo
-    }
+    <button id="btn-rocket" class="btn primary"><i class="fas fa-rocket"></i></button>
 
-    document.getElementById("modal-edit").classList.remove("hidden");
-};
+    <div id="login-screen" class="modal">
+        <div class="modal-content">
+            <h2 style="text-align:center; margin-bottom:20px; color:var(--primary)">Acceso Sistema</h2>
+            <input id="login-user" placeholder="Usuario">
+            <input id="login-pass" type="password" placeholder="Contraseña">
+            <button id="btn-login" class="btn primary" style="width:100%">ENTRAR</button>
+        </div>
+    </div>
 
-// --- GUARDAR O ACTUALIZAR REPARACIÓN ---
-document.getElementById("btn-save-rep").onclick = async () => {
-    const desc = document.getElementById("r-desc").value;
-    if(!desc) return alert("Falta descripción");
-    
-    const r = {
-        id_uf: currentUFId,
-        descripcion: desc,
-        ejecutor: document.getElementById("r-ejecutor").value,
-        estado: document.getElementById("r-estado").value,
-        garantia: document.getElementById("r-garantia").value,
-        responsable: document.getElementById("r-resp").value,
-        observaciones: document.getElementById("r-obs").value,
-        fecha: new Date().toLocaleDateString()
-    };
+    <div id="main-screen" class="wrap hidden">
+        <div class="main-header">
+            <div class="grid-btns">
+                <button id="btn-theme" class="btn ghost">TEMA</button>
+                <button id="btn-export" class="btn ghost">RESPALDO</button>
+                <button id="btn-logout-trigger" class="btn danger">CERRAR</button>
+            </div>
+            <input id="search-input" placeholder="Buscar unidad...">
+            <div class="grid-btns-2" style="margin-top:0">
+                <button id="btn-search" class="btn primary">BUSCAR</button>
+                <button id="btn-clear" class="btn ghost">LIMPIAR</button>
+            </div>
+        </div>
+        <div class="content-body"><div id="list"></div></div>
+    </div>
 
-    try {
-        if (window.currentRepId) {
-            // Si ya existía, actualizamos el documento existente
-            const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            await updateDoc(doc(db, "reparaciones", window.currentRepId), r);
-        } else {
-            // Si no, creamos uno nuevo
-            await addDoc(collection(db, "reparaciones"), r);
+    <div id="modal-logout" class="modal hidden">
+        <div class="modal-content" style="text-align:center">
+            <i class="fas fa-sign-out-alt" style="font-size:40px; color:var(--danger); margin-bottom:15px"></i>
+            <h3>Finalizar Sesión</h3>
+            <p style="margin:10px 0; font-size:14px; opacity:0.8">¿Desea cerrar el sistema?</p>
+            <div class="grid-btns-2">
+                <button id="btn-logout-confirm" class="btn danger">SALIR</button>
+                <button onclick="cerrarModales()" class="btn ghost">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-view" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="view-title" style="color:var(--primary); margin-bottom:10px; text-align:center"></h3>
+            <div id="view-reps-container"></div>
+            <button onclick="cerrarModales()" class="btn ghost" style="width:100%; margin-top:20px">VOLVER</button>
+        </div>
+    </div>
+
+    <div id="modal-edit" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="edit-title" style="text-align:center; margin-bottom:15px">Reparación</h3>
+            <textarea id="r-desc" placeholder="Descripción técnica..."></textarea>
+            <input id="r-ejecutor" placeholder="Técnico">
+            <select id="r-estado">
+                <option value="Pendiente">Estado: Pendiente</option>
+                <option value="Terminado">Estado: Terminado</option>
+            </select>
+            <input id="r-garantia" type="number" placeholder="Meses Garantía">
+            <select id="r-resp">
+                <option value="Consorcio">Gasto: Consorcio</option>
+                <option value="Particular">Gasto: Particular</option>
+            </select>
+            <textarea id="r-obs" placeholder="Observaciones..."></textarea>
+            <div class="grid-btns-2">
+                <button id="btn-save-rep" class="btn primary">GUARDAR</button>
+                <button onclick="cerrarModales()" class="btn danger">DESCARTAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto", storageBucket: "gestionuf-remoto.firebasestorage.app", messagingSenderId: "724452752860", appId: "1:724452752860:web:4d25585addcdcbd146e319" };
+        const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+        let departamentos = [], currentUFId = null, currentRepId = null;
+
+        window.onscroll = () => { document.getElementById("btn-rocket").style.display = (window.scrollY > 300) ? "flex" : "none"; };
+        document.getElementById("btn-rocket").onclick = () => window.scrollTo({top: 0, behavior: 'smooth'});
+
+        function render(data) {
+            const list = document.getElementById("list");
+            list.innerHTML = "";
+            data.forEach(d => {
+                const div = document.createElement("div");
+                div.className = "item";
+                div.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center">
+                    <div><b>UF: ${d.UF}</b><small>${d.Propietario || 'S/D'}</small></div>
+                    <div style="display:flex; gap:20px; font-size:20px">
+                        <i class="fas fa-eye" onclick="window.verHistorial('${d.id}', '${d.UF}')"></i>
+                        <i class="fas fa-edit" style="color:var(--primary)" onclick="window.nuevaReparacion('${d.id}', '${d.UF}')"></i>
+                    </div></div>`;
+                list.appendChild(div);
+            });
         }
-        cerrarModales();
-        alert("Datos guardados correctamente");
-    } catch (e) {
-        console.error("Error al guardar: ", e);
-    }
-};
+
+        window.verHistorial = async (id, uf) => {
+            document.getElementById("view-title").innerText = `UF: ${uf}`;
+            const container = document.getElementById("view-reps-container");
+            container.innerHTML = "Cargando...";
+            document.getElementById("modal-view").classList.remove("hidden");
+            const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
+            container.innerHTML = snap.empty ? "<p style='text-align:center'>Sin registros.</p>" : "";
+            snap.forEach(docSnap => {
+                const r = docSnap.data();
+                container.innerHTML += `<div class="rep-entry" style="border-left-color: ${r.estado === 'Terminado' ? 'var(--success)' : 'var(--danger)'}">
+                    <span class="ficha-label">FECHA:</span> ${r.fecha}
+                    <span class="ficha-label">TRABAJO:</span> ${r.descripcion}
+                    <span class="ficha-label">OBS:</span> ${r.observaciones || '---'}</div>`;
+            });
+        };
+
+        window.nuevaReparacion = async (id, uf) => {
+            currentUFId = id; currentRepId = null;
+            document.getElementById("edit-title").innerText = `Gestionar UF: ${uf}`;
+            document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
+            const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
+            if (!snap.empty) {
+                const r = snap.docs.data(); currentRepId = snap.docs.id;
+                document.getElementById("r-desc").value = r.descripcion || "";
+                document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                document.getElementById("r-estado").value = r.estado || "Pendiente";
+                document.getElementById("r-garantia").value = r.garantia || "";
+                document.getElementById("r-resp").value = r.responsable || "Consorcio";
+                document.getElementById("r-obs").value = r.observaciones || "";
+            }
+            document.getElementById("modal-edit").classList.remove("hidden");
+        };
+
+        document.getElementById("btn-save-rep").onclick = async () => {
+            const r = { id_uf: currentUFId, descripcion: document.getElementById("r-desc").value, ejecutor: document.getElementById("r-ejecutor").value, estado: document.getElementById("r-estado").value, garantia: document.getElementById("r-garantia").value, responsable: document.getElementById("r-resp").value, observaciones: document.getElementById("r-obs").value, fecha: new Date().toLocaleDateString() };
+            if(!r.descripcion) return alert("Falta descripción");
+            if(currentRepId) await updateDoc(doc(db, "reparaciones", currentRepId), r);
+            else await addDoc(collection(db, "reparaciones"), r);
+            cerrarModales(); alert("Guardado");
+        };
+
+        document.getElementById("btn-export").onclick = () => {
+            const csv = "UF,Propietario\n" + departamentos.map(d => `"${d.UF}","${d.Propietario}"`).join("\n");
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+            link.download = "Respaldo.csv"; link.click();
+        };
+
+        document.getElementById("btn-login").onclick = async () => {
+            const snap = await getDocs(query(collection(db, "usuarios"), where("usuario", "==", document.getElementById("login-user").value), where("password", "==", document.getElementById("login-pass").value)));
+            if (!snap.empty) { localStorage.setItem("uf_auth", "true"); location.reload(); } else alert("Error");
+        };
+
+        if(localStorage.getItem("uf_auth") === "true") {
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("main-screen").classList.remove("hidden");
+            onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
+                departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() })); render(departamentos);
+            });
+        }
+
+        document.getElementById("btn-search").onclick = () => render(departamentos.filter(d => d.UF.toLowerCase().includes(document.getElementById("search-input").value.toLowerCase()) || (d.Propietario||"").toLowerCase().includes(document.getElementById("search-input").value.toLowerCase())));
+        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
+        document.getElementById("btn-logout-trigger").onclick = () => document.getElementById("modal-logout").classList.remove("hidden");
+        document.getElementById("btn-logout-confirm").onclick = () => { localStorage.clear(); location.reload(); };
+        window.cerrarModales = () => { document.querySelectorAll(".modal").forEach(m => m.id !== "login-screen" && m.classList.add("hidden")); };
+        document.getElementById("btn-theme").onclick = () => document.body.classList.toggle("dark-mode");
+    </script>
+</body>
+</html>
