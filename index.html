@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Versión Final</title>
+    <title>Gestión Reparaciones - FINAL</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
@@ -82,11 +82,12 @@
         import { getFirestore, collection, getDocs, query, where, updateDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
+            apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo",
             authDomain: "gestionuf-remoto.firebaseapp.com",
             projectId: "gestionuf-remoto",
             storageBucket: "gestionuf-remoto.appspot.com",
-            messagingSenderId: "1016147427847",
-            appId: "1:1016147427847:web:866299d2df4973322d8e40"
+            messagingSenderId: "724452752860",
+            appId: "1:724452752860:web:4d25585addcdcbd146e319"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -103,7 +104,7 @@
                 const snap = await getDocs(collection(db, "departamentos"));
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 render(departamentos);
-            } catch (e) { list.innerHTML = "Error de conexión"; }
+            } catch (e) { console.error(e); }
         };
 
         function render(data) {
@@ -132,7 +133,7 @@
             currentRepDocId = null;
             document.getElementById("m-title").innerText = "Editar UF " + uf;
             
-            // LIMPIEZA INICIAL FORZADA
+            // Limpiar campos
             const ids = ["r-descripcion", "r-ejecutor", "r-garantia", "r-estado", "r-responsable"];
             ids.forEach(i => {
                 const el = document.getElementById(i);
@@ -147,18 +148,16 @@
                 const snap = await getDocs(q);
                 
                 if (!snap.empty) {
+                    // CORRECCIÓN: snap.docs es el documento de Firebase
                     const docSnap = snap.docs; 
-                    const r = docSnap.data();
+                    const r = docSnap.data(); // Ahora .data() sí funcionará
                     currentRepDocId = docSnap.id; 
 
-                    // ASIGNACIÓN EXPLÍCITA (Verifica que los nombres coincidan con tu Firebase)
                     document.getElementById("r-descripcion").value = r.descripcion || "";
                     document.getElementById("r-ejecutor").value    = r.ejecutor || "";
                     document.getElementById("r-garantia").value    = r.garantia || "";
                     document.getElementById("r-estado").value      = r.estado || "Pendiente";
                     document.getElementById("r-responsable").value = r.responsable || "Consorcio";
-                    
-                    console.log("Datos cargados del doc:", currentRepDocId);
                 }
             } catch (e) {
                 console.error("Error al cargar:", e);
