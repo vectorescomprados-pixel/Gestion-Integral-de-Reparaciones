@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - FIX FINAL</title>
+    <title>Gestión Reparaciones - Versión Blindada</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
+        :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; --success: #22c55e; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 160px; padding-bottom: 20px; }
@@ -14,12 +14,15 @@
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .search-box { display: flex; gap: 8px; margin-top: 10px; }
         input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
-        label { display: block; margin-bottom: 4px; font-size: 0.85em; color: #8696a0; }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        label { display: block; margin-bottom: 4px; font-size: 0.85em; color: #8696a0; font-weight: 600; }
+        .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; opacity: 0.9; }
+        .btn:hover { opacity: 1; transform: translateY(-1px); }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .btn-success { background: var(--success); color: #fff; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; backdrop-filter: blur(4px); }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); }
         .hist-item { background: #1a242d; padding: 10px; margin-top: 8px; border-radius: 6px; font-size: 0.9em; border-left: 3px solid var(--primary); }
     </style>
@@ -41,20 +44,20 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 id="m-title" style="margin-bottom:15px; color:var(--primary)">Editar</h3>
+            <h3 id="m-title" style="margin-bottom:15px; color:var(--primary)">Editar Registro</h3>
             
-            <label>Descripción:</label>
-            <textarea id="r-descripcion" rows="3"></textarea>
+            <label>Descripción de la Reparación:</label>
+            <textarea id="r-descripcion" rows="3" placeholder="Escriba aquí los detalles..."></textarea>
             
-            <label>Ejecutor:</label>
-            <input type="text" id="r-ejecutor">
+            <label>Técnico / Ejecutor:</label>
+            <input type="text" id="r-ejecutor" placeholder="Nombre del técnico">
             
             <label>Garantía:</label>
-            <input type="text" id="r-garantia">
+            <input type="text" id="r-garantia" placeholder="Ej: 3 meses">
             
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
                 <div>
-                    <label>Estado:</label>
+                    <label>Estado actual:</label>
                     <select id="r-estado">
                         <option value="Pendiente">Pendiente</option>
                         <option value="En Proceso">En Proceso</option>
@@ -70,9 +73,11 @@
                 </div>
             </div>
 
-            <div style="display:flex; gap:10px; margin-top:15px">
-                <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cerrar</button>
-                <button class="btn btn-primary" style="flex:1" onclick="window.saveRep()">Guardar</button>
+            <div style="display:flex; gap:10px; margin-top:20px">
+                <button class="btn btn-danger" style="flex:1" onclick="window.closeModal()">Cancelar</button>
+                <button id="btn-save-main" class="btn btn-success" style="flex:1" onclick="window.saveRep()">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
             </div>
         </div>
     </div>
@@ -81,6 +86,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, query, where, updateDoc, doc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // CONFIGURACIÓN CENTRALIZADA
         const firebaseConfig = {
             apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo",
             authDomain: "gestionuf-remoto.firebaseapp.com",
@@ -97,30 +103,35 @@
         let currentUFId = null;
         let currentRepDocId = null;
 
+        // CARGA DE DATOS CON MANEJO DE ERRORES
         window.loadData = async () => {
             const list = document.getElementById("listado");
-            list.innerHTML = "Actualizando...";
+            list.innerHTML = "<p style='text-align:center; padding:20px'>Conectando con Firebase...</p>";
             try {
-                const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
+                const q = query(collection(db, "departamentos"), orderBy("UF", "asc"));
+                const snap = await getDocs(q);
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 render(departamentos);
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                list.innerHTML = "<p style='color:var(--danger); padding:20px'>Error de red. Verifique su conexión.</p>";
+                console.error("LoadData Error:", e);
+            }
         };
 
         function render(data) {
             const list = document.getElementById("listado");
-            list.innerHTML = data.length ? "" : "Sin resultados";
+            list.innerHTML = data.length ? "" : "<p style='padding:20px'>No se encontraron unidades.</p>";
             data.forEach(d => {
                 list.innerHTML += `
                     <div class="card">
                         <div style="display:flex; justify-content:space-between; align-items:start">
                             <div>
-                                <h3 style="color:var(--primary)">UF ${d.UF}</h3>
-                                <p>${d.Propietario || '---'}</p>
+                                <h3 style="color:var(--primary)">Unidad Funcional ${d.UF}</h3>
+                                <p style="font-size:0.9em; margin-top:4px"><i class="fas fa-user"></i> ${d.Propietario || 'Sin asignar'}</p>
                             </div>
                             <div style="display:flex; gap:8px">
-                                <button class="btn btn-primary" onclick="window.openEdit('${d.id}', '${d.UF}')"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-primary" onclick="window.verHist('${d.id}')"><i class="fas fa-history"></i></button>
+                                <button title="Editar" class="btn btn-primary" onclick="window.openEdit('${d.id}', '${d.UF}')"><i class="fas fa-edit"></i></button>
+                                <button title="Historial" class="btn btn-primary" onclick="window.verHist('${d.id}')"><i class="fas fa-history"></i></button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -128,12 +139,13 @@
             });
         }
 
+        // ABRIR EDITOR (BLINDADO CONTRA DATOS CORRUPTOS)
         window.openEdit = async (id, uf) => {
             currentUFId = id;
-            currentRepDocId = null;
-            document.getElementById("m-title").innerText = "Editar UF " + uf;
+            currentRepDocId = null; 
+            document.getElementById("m-title").innerText = "UF " + uf + " - Editar";
             
-            // Limpiar campos antes de la carga
+            // RESET TOTAL DE CAMPOS (SEGURIDAD)
             document.getElementById("r-descripcion").value = "";
             document.getElementById("r-ejecutor").value = "";
             document.getElementById("r-garantia").value = "";
@@ -147,72 +159,119 @@
                 const snap = await getDocs(q);
                 
                 if (!snap.empty) {
-                    // CAMBIO CLAVE: Iteramos sobre los docs para evitar el error de función
-                    snap.forEach((docSnapshot) => {
-                        if (!currentRepDocId) { // Solo tomamos el primero
-                            const r = docSnapshot.data();
-                            currentRepDocId = docSnapshot.id;
+                    // SELECCIÓN SEGURA: Usamos forEach para asegurar la lectura del primer objeto
+                    snap.forEach(docSnap => {
+                        if (docSnap.exists() && !currentRepDocId) {
+                            const r = docSnap.data();
+                            currentRepDocId = docSnap.id; 
 
+                            // MAPEO PROTEGIDO (Uso de || "" para evitar nulls)
                             document.getElementById("r-descripcion").value = r.descripcion || "";
-                            document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                            document.getElementById("r-garantia").value = r.garantia || "";
-                            document.getElementById("r-estado").value = r.estado || "Pendiente";
+                            document.getElementById("r-ejecutor").value    = r.ejecutor || "";
+                            document.getElementById("r-garantia").value    = r.garantia || "";
+                            document.getElementById("r-estado").value      = r.estado || "Pendiente";
                             document.getElementById("r-responsable").value = r.responsable || "Consorcio";
                         }
                     });
                 }
             } catch (e) {
-                console.error("Error en openEdit:", e);
+                console.error("Error al recuperar datos:", e);
+                // No alertamos para no molestar al usuario, permitimos carga limpia
             }
         };
 
+        // GUARDAR CON FEEDBACK VISUAL
         window.saveRep = async () => {
+            const btn = document.getElementById("btn-save-main");
+            const originalHTML = btn.innerHTML;
+            
             const data = {
                 id_uf: currentUFId,
-                descripcion: document.getElementById("r-descripcion").value,
-                ejecutor: document.getElementById("r-ejecutor").value,
-                garantia: document.getElementById("r-garantia").value,
+                descripcion: document.getElementById("r-descripcion").value.trim(),
+                ejecutor: document.getElementById("r-ejecutor").value.trim(),
+                garantia: document.getElementById("r-garantia").value.trim(),
                 estado: document.getElementById("r-estado").value,
                 responsable: document.getElementById("r-responsable").value,
-                fecha: new Date().toLocaleDateString()
+                fecha_actualizacion: new Date().toLocaleString()
             };
 
+            // Validación mínima
+            if (!data.descripcion) {
+                alert("Por favor, ingrese una descripción.");
+                return;
+            }
+
             try {
+                btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Guardando...";
+                btn.disabled = true;
+
                 if (currentRepDocId) {
                     await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
                 } else {
+                    // Si no existía, agregamos la fecha de creación
+                    data.fecha_creacion = new Date().toLocaleDateString();
                     await addDoc(collection(db, "reparaciones"), data);
                 }
-                document.getElementById("modal-edit").classList.add("hidden");
-                alert("Guardado");
+
+                window.closeModal();
+                alert("¡Datos guardados correctamente!");
                 window.loadData();
-            } catch (e) { alert("Error al guardar"); }
+            } catch (e) { 
+                alert("Error al guardar en la nube. Intente nuevamente.");
+                console.error("Save Error:", e);
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        };
+
+        window.closeModal = () => {
+            document.getElementById("modal-edit").classList.add("hidden");
         };
 
         window.verHist = async (id) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "<small>Cargando...</small>";
+                el.innerHTML = "<small><i class='fas fa-spinner fa-spin'></i> Consultando historial...</small>";
                 try {
                     const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
                     const snap = await getDocs(q);
-                    el.innerHTML = snap.empty ? "Sin registros" : "";
+                    el.innerHTML = snap.empty ? "<p style='font-size:0.8em; color:#8696a0'>Sin reparaciones previas.</p>" : "";
                     snap.forEach(ds => {
                         const r = ds.data();
-                        el.innerHTML += `<div class="hist-item"><b>${r.fecha}:</b> ${r.descripcion}</div>`;
+                        el.innerHTML += `
+                            <div class="hist-item">
+                                <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--primary)">
+                                    <span>${r.fecha_creacion || 'Historial'}</span>
+                                    <span>${r.estado}</span>
+                                </div>
+                                <div style="margin-top:4px">${r.descripcion}</div>
+                                <div style="font-size:0.8em; color:#8696a0; margin-top:4px">Técnico: ${r.ejecutor || '---'}</div>
+                            </div>`;
                     });
-                } catch (e) { el.innerHTML = "Error al cargar historial"; }
+                } catch (e) { el.innerHTML = "Error al cargar historial."; }
             }
         };
 
+        // BUSCADOR MEJORADO
         document.getElementById("btn-search").onclick = () => {
-            const v = document.getElementById("search-input").value.toLowerCase();
-            render(departamentos.filter(d => d.UF.toString().toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
+            const v = document.getElementById("search-input").value.toLowerCase().trim();
+            if(!v) return render(departamentos);
+            render(departamentos.filter(d => 
+                d.UF.toString().toLowerCase().includes(v) || 
+                (d.Propietario && d.Propietario.toLowerCase().includes(v))
+            ));
         };
-        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
+
+        document.getElementById("btn-clear").onclick = () => { 
+            document.getElementById("search-input").value = ""; 
+            render(departamentos); 
+        };
+
         document.getElementById("btn-refresh").onclick = () => window.loadData();
 
+        // INICIO AUTOMÁTICO
         window.loadData();
     </script>
 </body>
