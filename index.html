@@ -3,26 +3,24 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Confirmación de Datos</title>
+    <title>Gestión Reparaciones - Desbloqueo Total</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; --warning: #f59e0b; --success: #22c55e; }
+        :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
         .wrap { width: 95%; max-width: 450px; position: relative; }
         .hidden { display: none !important; }
         
-        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; }
         .content-body { margin-top: 230px; width: 100%; padding-bottom: 100px; }
         
-        .grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
         .grid-btns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
         .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
         
-        .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); width: 100%; }
-        .item b { font-size: 16px; color: var(--primary); display: block; margin-bottom: 5px; }
-        .details { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 14px; line-height: 1.6; }
+        .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
+        .details { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 14px; }
         
         #btn-rocket { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; z-index: 5000; display: none; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
@@ -38,12 +36,12 @@
 
     <div id="main-screen" class="wrap">
         <div class="main-header">
-            <div class="grid-btns">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
                 <button id="btn-theme" class="btn ghost">TEMA</button>
                 <button id="btn-export" class="btn ghost">RESPALDO</button>
                 <button id="btn-logout" class="btn danger">CERRAR</button>
             </div>
-            <input id="search-input" placeholder="Buscar por Unidad o Apellido...">
+            <input id="search-input" placeholder="Buscar Unidad o Apellido...">
             <div class="grid-btns-2" style="margin-top:0">
                 <button id="btn-search" class="btn primary">BUSCAR</button>
                 <button id="btn-clear" class="btn ghost">LIMPIAR</button>
@@ -54,8 +52,8 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 id="edit-title" style="text-align:center; margin-bottom:5px">Reparación</h3>
-            <span id="confirm-owner" class="label-confirm">Propietario: ---</span>
+            <h3 style="text-align:center; margin-bottom:5px">Reparación</h3>
+            <span id="confirm-owner" class="label-confirm">Cargando datos...</span>
             
             <textarea id="r-desc" placeholder="Descripción técnica..."></textarea>
             <input id="r-ejecutor" placeholder="Técnico / Empresa">
@@ -84,6 +82,7 @@
         const app = initializeApp(firebaseConfig); const db = getFirestore(app);
         let departamentos = [], currentUFId = null, currentRepId = null;
 
+        // COHETE
         window.onscroll = () => { document.getElementById("btn-rocket").style.display = (window.scrollY > 300) ? "flex" : "none"; };
         document.getElementById("btn-rocket").onclick = () => window.scrollTo({top: 0, behavior: 'smooth'});
 
@@ -116,43 +115,70 @@
             });
         }
 
-        // ABRIR EDITOR CON VERIFICACIÓN DE PROPIETARIO
+        // FUNCIÓN DE EDICIÓN TOTALMENTE LIBRE
         window.abrirEditor = async (id, uf, propietario) => {
-            currentUFId = id; currentRepId = null;
-            document.getElementById("edit-title").innerText = `Gestionar Reparación UF: ${uf}`;
-            document.getElementById("confirm-owner").innerText = `Propietario: ${propietario}`; // MUESTRA NOMBRE PARA CORROBORAR
+            console.log("Intentando editar UF:", uf); // Para depuración en consola
+            currentUFId = id; 
+            currentRepId = null;
             
+            // Limpiar y mostrar confirmación
+            document.getElementById("confirm-owner").innerText = `Verificado: ${propietario} (UF ${uf})`;
             document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
-            
-            const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
-            if(!snap.empty) {
-                const r = snap.docs.data(); currentRepId = snap.docs.id;
-                document.getElementById("r-desc").value = r.descripcion || "";
-                document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                document.getElementById("r-estado").value = r.estado || "Pendiente";
-                document.getElementById("r-garantia").value = r.garantia || "";
-                document.getElementById("r-resp").value = r.responsable || "Consorcio";
-                document.getElementById("r-obs").value = r.observaciones || "";
-            }
             document.getElementById("modal-edit").classList.remove("hidden");
+
+            try {
+                const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
+                const snap = await getDocs(q);
+                if(!snap.empty) {
+                    const r = snap.docs.data(); 
+                    currentRepId = snap.docs.id;
+                    document.getElementById("r-desc").value = r.descripcion || "";
+                    document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                    document.getElementById("r-estado").value = r.estado || "Pendiente";
+                    document.getElementById("r-garantia").value = r.garantia || "";
+                    document.getElementById("r-resp").value = r.responsable || "Consorcio";
+                    document.getElementById("r-obs").value = r.observaciones || "";
+                }
+            } catch (err) {
+                alert("Error al conectar con la base de datos");
+            }
         };
 
         document.getElementById("btn-save").onclick = async () => {
             const desc = document.getElementById("r-desc").value;
-            if(!desc) return alert("Ingrese descripción");
-            const r = { id_uf: currentUFId, descripcion: desc, ejecutor: document.getElementById("r-ejecutor").value, estado: document.getElementById("r-estado").value, garantia: document.getElementById("r-garantia").value, responsable: document.getElementById("r-resp").value, observaciones: document.getElementById("r-obs").value, fecha: new Date().toLocaleDateString() };
+            if(!desc) return alert("Ingrese descripción del trabajo");
             
-            if(currentRepId) await updateDoc(doc(db, "reparaciones", currentRepId), r);
-            else await addDoc(collection(db, "reparaciones"), r);
+            const r = { 
+                id_uf: currentUFId, 
+                descripcion: desc, 
+                ejecutor: document.getElementById("r-ejecutor").value, 
+                estado: document.getElementById("r-estado").value, 
+                garantia: document.getElementById("r-garantia").value, 
+                responsable: document.getElementById("r-resp").value, 
+                observaciones: document.getElementById("r-obs").value, 
+                fecha: new Date().toLocaleDateString() 
+            };
             
-            cerrarModales(); alert("Guardado correctamente");
+            try {
+                if(currentRepId) {
+                    await updateDoc(doc(db, "reparaciones", currentRepId), r);
+                } else {
+                    await addDoc(collection(db, "reparaciones"), r);
+                }
+                cerrarModales(); 
+                alert("Guardado con éxito");
+            } catch (e) {
+                alert("Error al guardar cambios");
+            }
         };
 
+        // SYNC
         onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
             departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             render(departamentos);
         });
 
+        // UTILIDADES
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
             render(departamentos.filter(d => d.UF.toLowerCase().includes(v) || (d.Propietario||"").toLowerCase().includes(v)));
