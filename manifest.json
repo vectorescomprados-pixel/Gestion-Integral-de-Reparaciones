@@ -1,0 +1,23 @@
+{
+  "short_name": "Reparaciones",
+  "name": "Gestión Reparaciones Pro",
+  "icons": [
+    {
+      "src": "icono.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icono.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b141a",
+  "theme_color": "#0b141a",
+  "orientation": "portrait"
+}
