@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones Pro</title>
+    <title>Gestión Reparaciones - Multi-Trabajo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
@@ -15,29 +15,25 @@
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 160px; padding-bottom: 20px; }
         .hidden { display: none !important; }
         
-        /* Header */
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .search-box { display: flex; gap: 8px; margin-top: 10px; }
         
-        /* Inputs */
         input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
         label { display: block; margin-bottom: 4px; font-size: 0.85em; color: #8696a0; font-weight: 600; }
         
-        /* Cards */
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); }
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
+        .btn-sm { padding: 5px 10px; font-size: 0.8em; }
         
-        /* Historial y Estados */
-        .hist-item { background: #1a242d; padding: 10px; margin-top: 8px; border-radius: 6px; font-size: 0.9em; border-left: 4px solid #ccc; }
-        .st-pendiente { border-left-color: var(--danger) !important; background: rgba(225, 29, 72, 0.1); }
-        .st-en-proceso { border-left-color: var(--warning) !important; background: rgba(245, 158, 11, 0.1); }
-        .st-terminado { border-left-color: var(--success) !important; background: rgba(34, 197, 94, 0.1); }
+        /* Estilos de Historial con Botón de Edición */
+        .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.9em; border-left: 5px solid #ccc; position: relative; }
+        .st-pendiente { border-left-color: var(--danger) !important; background: rgba(225, 29, 72, 0.05); }
+        .st-en-proceso { border-left-color: var(--warning) !important; background: rgba(245, 158, 11, 0.05); }
+        .st-terminado { border-left-color: var(--success) !important; background: rgba(34, 197, 94, 0.05); }
         
-        /* Modal */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; backdrop-filter: blur(4px); }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); }
     </style>
@@ -60,15 +56,12 @@
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
             <h3 id="m-title" style="margin-bottom:15px; color:var(--primary)">Trabajo</h3>
-            
-            <label>Descripción del Problema:</label>
-            <textarea id="r-descripcion" rows="3" placeholder="Ej: Filtración en techo"></textarea>
-            
-            <label>Técnico / Ejecutor:</label>
-            <input type="text" id="r-ejecutor" placeholder="Nombre del técnico">
-            
+            <label>Descripción:</label>
+            <textarea id="r-descripcion" rows="3"></textarea>
+            <label>Técnico:</label>
+            <input type="text" id="r-ejecutor">
             <label>Garantía:</label>
-            <input type="text" id="r-garantia" placeholder="Ej: 6 meses">
+            <input type="text" id="r-garantia">
             
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
                 <div>
@@ -97,7 +90,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, updateDoc, doc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, query, where, updateDoc, doc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo",
@@ -136,10 +129,9 @@
                                 <h3 style="color:var(--primary)">UF ${d.UF}</h3>
                                 <p><i class="fas fa-user"></i> ${d.Propietario || '---'}</p>
                             </div>
-                            <div style="display:flex; gap:5px">
+                            <div style="display:flex; gap:8px">
                                 <button title="Nuevo Trabajo" class="btn btn-success" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button title="Editar Último" class="btn btn-primary" onclick="window.openEdit('${d.id}', '${d.UF}')"><i class="fas fa-edit"></i></button>
-                                <button title="Ver Todo" class="btn btn-primary" onclick="window.verHist('${d.id}')"><i class="fas fa-history"></i></button>
+                                <button title="Ver y Editar Trabajos" class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Gestionar</button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -147,7 +139,7 @@
             });
         }
 
-        // NUEVO TRABAJO (Limpia todo)
+        // FUNCIÓN 1: CREAR TRABAJO NUEVO DESDE CERO
         window.openNew = (id, uf) => {
             currentUFId = id;
             currentRepDocId = null; 
@@ -159,30 +151,24 @@
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
-        // EDITAR (Carga el último trabajo)
-        window.openEdit = async (id, uf) => {
-            currentUFId = id;
-            currentRepDocId = null;
-            document.getElementById("m-title").innerText = "Editar UF " + uf;
-            document.getElementById("modal-edit").classList.remove("hidden");
-
+        // FUNCIÓN 2: EDITAR UN TRABAJO ESPECÍFICO (Se llama desde el historial)
+        window.editSpecific = async (docId, uf) => {
+            currentRepDocId = docId;
+            document.getElementById("m-title").innerText = "Editando Trabajo - UF " + uf;
+            
             try {
-                const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    snap.forEach(docSnap => {
-                        if(!currentRepDocId) { // Tomamos el primero que encuentre
-                            const r = docSnap.data();
-                            currentRepDocId = docSnap.id;
-                            document.getElementById("r-descripcion").value = r.descripcion || "";
-                            document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                            document.getElementById("r-garantia").value = r.garantia || "";
-                            document.getElementById("r-estado").value = r.estado || "Pendiente";
-                            document.getElementById("r-responsable").value = r.responsable || "Consorcio";
-                        }
-                    });
+                const docSnap = await getDoc(doc(db, "reparaciones", docId));
+                if (docSnap.exists()) {
+                    const r = docSnap.data();
+                    currentUFId = r.id_uf;
+                    document.getElementById("r-descripcion").value = r.descripcion || "";
+                    document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                    document.getElementById("r-garantia").value = r.garantia || "";
+                    document.getElementById("r-estado").value = r.estado || "Pendiente";
+                    document.getElementById("r-responsable").value = r.responsable || "Consorcio";
+                    document.getElementById("modal-edit").classList.remove("hidden");
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { alert("Error al cargar trabajo"); }
         };
 
         window.saveRep = async () => {
@@ -203,34 +189,40 @@
                     await addDoc(collection(db, "reparaciones"), data);
                 }
                 window.closeModal();
-                alert("Guardado correctamente");
+                alert("¡Actualizado!");
                 window.loadData();
             } catch (e) { alert("Error al guardar"); }
         };
 
         window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
 
-        window.verHist = async (id) => {
+        // HISTORIAL DINÁMICO CON BOTONES DE EDICIÓN POR ITEM
+        window.verHist = async (id, uf) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "Cargando historial...";
+                el.innerHTML = "<small>Cargando lista de trabajos...</small>";
                 try {
                     const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
                     const snap = await getDocs(q);
                     el.innerHTML = snap.empty ? "Sin registros" : "";
+                    
                     snap.forEach(ds => {
                         const r = ds.data();
-                        // DISTINCIÓN DE COLORES POR ESTADO
-                        let claseEstado = "";
-                        if(r.estado === "Pendiente") claseEstado = "st-pendiente";
-                        else if(r.estado === "En Proceso") claseEstado = "st-en-proceso";
-                        else if(r.estado === "Terminado") claseEstado = "st-terminado";
+                        const docId = ds.id;
+                        let clase = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
 
                         el.innerHTML += `
-                            <div class="hist-item ${claseEstado}">
-                                <b>${r.fecha}:</b> ${r.descripcion}<br>
-                                <small>Técnico: ${r.ejecutor || '---'} | <b>${r.estado}</b></small>
+                            <div class="hist-item ${clase}">
+                                <div style="display:flex; justify-content:space-between; align-items:start">
+                                    <div style="flex:1">
+                                        <b>${r.fecha}:</b> ${r.descripcion}<br>
+                                        <small>Téc: ${r.ejecutor || '---'} | <b>${r.estado}</b></small>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" onclick="window.editSpecific('${docId}', '${uf}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
                             </div>`;
                     });
                 } catch (e) { el.innerHTML = "Error al cargar"; }
