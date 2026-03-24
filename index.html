@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Sync Fix</title>
+    <title>Gestión Reparaciones - Versión Estable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
@@ -13,16 +13,15 @@
         .hidden { display: none !important; }
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; }
         .content-body { margin-top: 230px; width: 100%; padding-bottom: 100px; }
-        .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+        .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
         .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
         .details { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 14px; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
-        input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: #0b141a; color: var(--text); }
-        textarea { height: 80px; padding: 10px; resize: none; }
-        .label-confirm { color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 15px; display: block; text-align: center; background: rgba(37, 99, 235, 0.1); padding: 8px; border-radius: 8px; }
-        .rep-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-top: 10px; border-left: 4px solid var(--primary); }
+        input, select, textarea { width: 100%; height: 40px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); padding: 0 10px; background: #0b141a; color: var(--text); }
+        textarea { height: 70px; padding: 10px; resize: none; }
+        .rep-card { background: rgba(37, 99, 235, 0.1); padding: 10px; border-radius: 8px; margin-top: 8px; border-left: 4px solid var(--primary); position: relative; }
     </style>
 </head>
 <body class="dark-mode">
@@ -34,10 +33,11 @@
                 <button id="btn-export" class="btn ghost">RESPALDO</button>
                 <button id="btn-logout" class="btn danger">CERRAR</button>
             </div>
-            <input id="search-input" placeholder="Buscar Unidad...">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input id="search-input" placeholder="Buscar Unidad o Apellido...">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 50px; gap: 10px;">
                 <button id="btn-search" class="btn primary">BUSCAR</button>
                 <button id="btn-clear" class="btn ghost">LIMPIAR</button>
+                <button id="btn-refresh" class="btn primary" title="Forzar Refresco"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
         <div class="content-body"><div id="list"></div></div>
@@ -45,21 +45,18 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 style="text-align:center; margin-bottom:5px">Reparación</h3>
-            <span id="confirm-owner" class="label-confirm">---</span>
-            
-            <textarea id="r-desc" placeholder="Descripción técnica..."></textarea>
-            <input id="r-ejecutor" placeholder="Técnico">
+            <h3 id="modal-title" style="text-align:center; margin-bottom:15px; color:var(--primary)">Cargar Reparación</h3>
+            <p id="confirm-owner" style="font-size:12px; text-align:center; margin-bottom:10px; opacity:0.8"></p>
+            <textarea id="r-desc" placeholder="Descripción del trabajo..."></textarea>
+            <input id="r-ejecutor" placeholder="Técnico responsable">
             <select id="r-estado">
                 <option value="Pendiente">Estado: Pendiente</option>
                 <option value="Terminado">Estado: Terminado</option>
             </select>
-            <input id="r-garantia" type="number" placeholder="Garantía (Meses)">
             <select id="r-resp">
                 <option value="Consorcio">Gasto: Consorcio</option>
                 <option value="Particular">Gasto: Particular</option>
             </select>
-            <textarea id="r-obs" placeholder="Observaciones..."></textarea>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px">
                 <button id="btn-save" class="btn primary">GUARDAR</button>
                 <button onclick="cerrarModales()" class="btn danger">CANCELAR</button>
@@ -69,11 +66,22 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto", storageBucket: "gestionuf-remoto.firebasestorage.app", messagingSenderId: "724452752860", appId: "1:724452752860:web:4d25585addcdcbd146e319" };
         const app = initializeApp(firebaseConfig); const db = getFirestore(app);
-        let departamentos = [], currentUFId = null, currentRepId = null;
+        let departamentos = [], currentUFId = null;
+
+        // REFRESCO FORZADO
+        window.forceRefresh = async () => {
+            const btn = document.getElementById("btn-refresh");
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
+            departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            render(departamentos);
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        };
+        document.getElementById("btn-refresh").onclick = forceRefresh;
 
         function render(data) {
             const list = document.getElementById("list");
@@ -83,88 +91,69 @@
                 div.className = "item";
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center">
-                        <div><b>UF: ${d.UF}</b><small>${d.Propietario || 'S/D'}</small></div>
+                        <div><b>UF: ${d.UF}</b><small>${d.Propietario}</small></div>
                         <div style="display:flex; gap:20px; font-size:20px">
-                            <i class="fas fa-tools" onclick="window.toggleDetalle('${d.id}')"></i>
+                            <i class="fas fa-tools" onclick="window.verHistorial('${d.id}')"></i>
                             <i class="fas fa-edit" style="color:var(--primary)" onclick="window.abrirEditor('${d.id}', '${d.UF}', '${d.Propietario}')"></i>
                         </div>
                     </div>
                     <div id="det-${d.id}" class="details hidden">
-                        <p><b style="color:var(--primary)">Prop:</b> ${d.Propietario}</p>
-                        <p><b style="color:var(--primary)">Tel:</b> ${d.TelefonoPropietario || 'N/C'}</p>
-                        <div id="historial-${d.id}" style="margin-top:10px"></div>
+                        <div id="historial-${d.id}"></div>
                     </div>`;
                 list.appendChild(div);
             });
         }
 
-        window.toggleDetalle = async (id) => {
+        window.verHistorial = async (id) => {
             const el = document.getElementById(`det-${id}`);
             el.classList.toggle('hidden');
             if(!el.classList.contains('hidden')) {
                 const hist = document.getElementById(`historial-${id}`);
-                hist.innerHTML = "<small>Cargando historial...</small>";
-                const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
-                hist.innerHTML = snap.empty ? "<small>Sin reparaciones cargadas.</small>" : "";
-                snap.forEach(doc => {
-                    const r = doc.data();
-                    hist.innerHTML += `<div class="rep-card"><b>${r.fecha}:</b> ${r.descripcion} <br> <small>Estado: ${r.estado}</small></div>`;
+                hist.innerHTML = "<small>Buscando...</small>";
+                const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
+                const snap = await getDocs(q);
+                hist.innerHTML = snap.empty ? "<small>Sin reparaciones.</small>" : "";
+                snap.forEach(docSnap => {
+                    const r = docSnap.data();
+                    hist.innerHTML += `<div class="rep-card">
+                        <b>${r.fecha}:</b> ${r.descripcion}<br>
+                        <small>Responsable: ${r.responsable} | Técnico: ${r.ejecutor}</small>
+                        <i class="fas fa-trash" style="position:absolute; right:10px; top:10px; color:var(--danger)" onclick="window.borrarRep('${docSnap.id}', '${id}')"></i>
+                    </div>`;
                 });
             }
         };
 
-        window.abrirEditor = async (id, uf, propietario) => {
-            currentUFId = id; currentRepId = null;
-            document.getElementById("confirm-owner").innerText = `Corroborar: ${propietario} (UF ${uf})`;
+        window.abrirEditor = (id, uf, propietario) => {
+            currentUFId = id;
+            document.getElementById("confirm-owner").innerText = `Corroborar: UF ${uf} - ${propietario}`;
             document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
-            
-            // BÚSQUEDA REFORZADA: Buscamos por ID de UF para cargar datos previos
-            const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
-            if(!snap.empty) {
-                const r = snap.docs.data();
-                currentRepId = snap.docs.id; // Mantenemos el ID para sobreescribir
-                document.getElementById("r-desc").value = r.descripcion || "";
-                document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                document.getElementById("r-estado").value = r.estado || "Pendiente";
-                document.getElementById("r-garantia").value = r.garantia || "";
-                document.getElementById("r-resp").value = r.responsable || "Consorcio";
-                document.getElementById("r-obs").value = r.observaciones || "";
-            }
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
         document.getElementById("btn-save").onclick = async () => {
             const desc = document.getElementById("r-desc").value;
             if(!desc) return alert("Ingrese descripción");
-            
+
             const r = { 
                 id_uf: currentUFId, 
                 descripcion: desc, 
                 ejecutor: document.getElementById("r-ejecutor").value, 
                 estado: document.getElementById("r-estado").value, 
-                garantia: document.getElementById("r-garantia").value, 
                 responsable: document.getElementById("r-resp").value, 
-                observaciones: document.getElementById("r-obs").value, 
                 fecha: new Date().toLocaleDateString() 
             };
-            
-            try {
-                // SIEMPRE buscamos si ya existe para esa UF antes de guardar
-                const q = query(collection(db, "reparaciones"), where("id_uf", "==", currentUFId));
-                const existing = await getDocs(q);
-                
-                if(!existing.empty) {
-                    // Si existe, lo actualizamos usando su ID real de Firebase
-                    await updateDoc(doc(db, "reparaciones", existing.docs.id), r);
-                } else {
-                    // Si no existe, creamos uno nuevo
-                    await addDoc(collection(db, "reparaciones"), r);
-                }
-                
-                cerrarModales(); 
-                alert("¡Datos sincronizados correctamente!");
-            } catch (e) {
-                alert("Error de sincronización. Intente nuevamente.");
+
+            await addDoc(collection(db, "reparaciones"), r);
+            cerrarModales();
+            alert("Guardado");
+            window.verHistorial(currentUFId); // Muestra el historial actualizado
+        };
+
+        window.borrarRep = async (repId, ufId) => {
+            if(confirm("¿Borrar esta reparación?")) {
+                await deleteDoc(doc(db, "reparaciones", repId));
+                window.verHistorial(ufId);
             }
         };
 
@@ -174,8 +163,11 @@
         });
 
         window.cerrarModales = () => document.getElementById("modal-edit").classList.add("hidden");
-        document.getElementById("btn-logout").onclick = () => location.reload();
-        document.getElementById("btn-theme").onclick = () => document.body.classList.toggle("dark-mode");
+        document.getElementById("btn-search").onclick = () => {
+            const v = document.getElementById("search-input").value.toLowerCase();
+            render(departamentos.filter(d => d.UF.toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
+        };
+        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
     </script>
 </body>
 </html>
