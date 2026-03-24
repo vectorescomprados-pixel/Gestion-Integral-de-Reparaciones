@@ -3,17 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Fix UF 0003</title>
+    <title>Gestión Reparaciones - Sync Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
         .wrap { width: 95%; max-width: 450px; position: relative; }
         .hidden { display: none !important; }
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; }
         .content-body { margin-top: 230px; width: 100%; padding-bottom: 100px; }
-        .grid-btns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
         .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
         .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
@@ -23,9 +22,10 @@
         input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: #0b141a; color: var(--text); }
         textarea { height: 80px; padding: 10px; resize: none; }
         .label-confirm { color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 15px; display: block; text-align: center; background: rgba(37, 99, 235, 0.1); padding: 8px; border-radius: 8px; }
+        .rep-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-top: 10px; border-left: 4px solid var(--primary); }
     </style>
 </head>
-<body>
+<body class="dark-mode">
 
     <div id="main-screen" class="wrap">
         <div class="main-header">
@@ -35,7 +35,7 @@
                 <button id="btn-logout" class="btn danger">CERRAR</button>
             </div>
             <input id="search-input" placeholder="Buscar Unidad...">
-            <div class="grid-btns-2" style="margin-top:0">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <button id="btn-search" class="btn primary">BUSCAR</button>
                 <button id="btn-clear" class="btn ghost">LIMPIAR</button>
             </div>
@@ -60,7 +60,7 @@
                 <option value="Particular">Gasto: Particular</option>
             </select>
             <textarea id="r-obs" placeholder="Observaciones..."></textarea>
-            <div class="grid-btns-2">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:10px">
                 <button id="btn-save" class="btn primary">GUARDAR</button>
                 <button onclick="cerrarModales()" class="btn danger">CANCELAR</button>
             </div>
@@ -69,7 +69,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, doc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto", storageBucket: "gestionuf-remoto.firebasestorage.app", messagingSenderId: "724452752860", appId: "1:724452752860:web:4d25585addcdcbd146e319" };
         const app = initializeApp(firebaseConfig); const db = getFirestore(app);
@@ -85,44 +85,57 @@
                     <div style="display:flex; justify-content:space-between; align-items:center">
                         <div><b>UF: ${d.UF}</b><small>${d.Propietario || 'S/D'}</small></div>
                         <div style="display:flex; gap:20px; font-size:20px">
-                            <i class="fas fa-tools" onclick="document.getElementById('det-${d.id}').classList.toggle('hidden')"></i>
+                            <i class="fas fa-tools" onclick="window.toggleDetalle('${d.id}')"></i>
                             <i class="fas fa-edit" style="color:var(--primary)" onclick="window.abrirEditor('${d.id}', '${d.UF}', '${d.Propietario}')"></i>
                         </div>
                     </div>
                     <div id="det-${d.id}" class="details hidden">
                         <p><b style="color:var(--primary)">Prop:</b> ${d.Propietario}</p>
                         <p><b style="color:var(--primary)">Tel:</b> ${d.TelefonoPropietario || 'N/C'}</p>
+                        <div id="historial-${d.id}" style="margin-top:10px"></div>
                     </div>`;
                 list.appendChild(div);
             });
         }
 
+        window.toggleDetalle = async (id) => {
+            const el = document.getElementById(`det-${id}`);
+            el.classList.toggle('hidden');
+            if(!el.classList.contains('hidden')) {
+                const hist = document.getElementById(`historial-${id}`);
+                hist.innerHTML = "<small>Cargando historial...</small>";
+                const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
+                hist.innerHTML = snap.empty ? "<small>Sin reparaciones cargadas.</small>" : "";
+                snap.forEach(doc => {
+                    const r = doc.data();
+                    hist.innerHTML += `<div class="rep-card"><b>${r.fecha}:</b> ${r.descripcion} <br> <small>Estado: ${r.estado}</small></div>`;
+                });
+            }
+        };
+
         window.abrirEditor = async (id, uf, propietario) => {
             currentUFId = id; currentRepId = null;
             document.getElementById("confirm-owner").innerText = `Corroborar: ${propietario} (UF ${uf})`;
             document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
+            
+            // BÚSQUEDA REFORZADA: Buscamos por ID de UF para cargar datos previos
+            const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
+            if(!snap.empty) {
+                const r = snap.docs.data();
+                currentRepId = snap.docs.id; // Mantenemos el ID para sobreescribir
+                document.getElementById("r-desc").value = r.descripcion || "";
+                document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                document.getElementById("r-estado").value = r.estado || "Pendiente";
+                document.getElementById("r-garantia").value = r.garantia || "";
+                document.getElementById("r-resp").value = r.responsable || "Consorcio";
+                document.getElementById("r-obs").value = r.observaciones || "";
+            }
             document.getElementById("modal-edit").classList.remove("hidden");
-
-            // Intento de carga con bypass de errores
-            try {
-                const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
-                const snap = await getDocs(q);
-                if(!snap.empty) {
-                    const r = snap.docs.data(); 
-                    currentRepId = snap.docs.id;
-                    document.getElementById("r-desc").value = r.descripcion || "";
-                    document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                    document.getElementById("r-estado").value = r.estado || "Pendiente";
-                    document.getElementById("r-garantia").value = r.garantia || "";
-                    document.getElementById("r-resp").value = r.responsable || "Consorcio";
-                    document.getElementById("r-obs").value = r.observaciones || "";
-                }
-            } catch (e) { console.error("Error carga:", e); }
         };
 
         document.getElementById("btn-save").onclick = async () => {
             const desc = document.getElementById("r-desc").value;
-            if(!desc) return alert("Falta descripción");
+            if(!desc) return alert("Ingrese descripción");
             
             const r = { 
                 id_uf: currentUFId, 
@@ -136,24 +149,22 @@
             };
             
             try {
-                if(currentRepId) {
-                    // Intento de actualización
-                    await updateDoc(doc(db, "reparaciones", currentRepId), r);
+                // SIEMPRE buscamos si ya existe para esa UF antes de guardar
+                const q = query(collection(db, "reparaciones"), where("id_uf", "==", currentUFId));
+                const existing = await getDocs(q);
+                
+                if(!existing.empty) {
+                    // Si existe, lo actualizamos usando su ID real de Firebase
+                    await updateDoc(doc(db, "reparaciones", existing.docs.id), r);
                 } else {
-                    // Si no existe, crear nuevo
+                    // Si no existe, creamos uno nuevo
                     await addDoc(collection(db, "reparaciones"), r);
                 }
-                cerrarModales(); alert("¡Guardado con éxito!");
+                
+                cerrarModales(); 
+                alert("¡Datos sincronizados correctamente!");
             } catch (e) {
-                // REPARACIÓN DE EMERGENCIA PARA UF 0003
-                console.log("Fallo updateDoc, intentando setDoc de emergencia...");
-                try {
-                    // Crea una entrada nueva ignorando el error de permiso del documento viejo
-                    await addDoc(collection(db, "reparaciones"), r);
-                    cerrarModales(); alert("Guardado (Nueva entrada de emergencia)");
-                } catch (err2) {
-                    alert("Error crítico de base de datos. Verifique conexión.");
-                }
+                alert("Error de sincronización. Intente nuevamente.");
             }
         };
 
