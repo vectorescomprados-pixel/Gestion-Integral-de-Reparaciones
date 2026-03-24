@@ -1,245 +1,63 @@
-﻿<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>GestiónUF Pro - Enterprise</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --primary: #2563eb; --danger: #e11d48; --text: #1f293b; --border: #e5e7eb; --warning: #f59e0b; --success: #22c55e; }
-        body.dark-mode { --bg: #0b141a; --card: #111b21; --text: #e9edef; --border: #222d34; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
-        .wrap { width: 95%; max-width: 450px; position: relative; }
-        .hidden { display: none !important; }
-        
-        /* Header Fijo */
-        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .content-body { margin-top: 230px; width: 100%; padding-bottom: 100px; }
-        
-        /* Botones y Grid */
-        .grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-        .grid-btns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-        .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
-        
-        /* Elementos UI */
-        #btn-rocket { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; z-index: 5000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 20px; border: 2px solid white; display: none; align-items: center; justify-content: center; }
-        .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); width: 100%; }
-        .item b { font-size: 16px; color: var(--primary); display: block; margin-bottom: 5px; }
-        
-        /* Modales */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
-        input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: var(--bg); color: var(--text); }
-        textarea { height: 80px; padding: 10px; resize: none; }
-        
-        /* Ficha de Lectura */
-        .ficha-label { color: var(--primary); font-weight: bold; display: block; margin-top: 8px; font-size: 13px; }
-        .rep-entry { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary); font-size: 14px; }
-    </style>
-</head>
-<body class="dark-mode">
+﻿// --- FUNCION CORREGIDA PARA EDITAR O CREAR ---
+window.nuevaReparacion = async (docId, uf) => {
+    currentUFId = docId;
+    document.getElementById("edit-title").innerText = `Gestionar Reparación UF: ${uf}`;
+    
+    // 1. Limpiamos el formulario por defecto
+    document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
+    document.getElementById("r-estado").value = "Pendiente";
+    document.getElementById("r-resp").value = "Consorcio";
 
-    <button id="btn-rocket" class="btn primary"><i class="fas fa-rocket"></i></button>
+    // 2. Buscamos si ya existe una reparación para esta UF para cargar los datos
+    const q = query(collection(db, "reparaciones"), where("id_uf", "==", docId));
+    const snap = await getDocs(q);
+    
+    if (!snap.empty) {
+        // Si existe, cargamos los datos del primer registro encontrado
+        const data = snap.docs.data();
+        document.getElementById("r-desc").value = data.descripcion || "";
+        document.getElementById("r-ejecutor").value = data.ejecutor || "";
+        document.getElementById("r-estado").value = data.estado || "Pendiente";
+        document.getElementById("r-garantia").value = data.garantia || "";
+        document.getElementById("r-resp").value = data.responsable || "Consorcio";
+        document.getElementById("r-obs").value = data.observaciones || "";
+        // Guardamos el ID del documento de reparación para actualizarlo luego
+        window.currentRepId = snap.docs.id; 
+    } else {
+        window.currentRepId = null; // Es un registro nuevo
+    }
 
-    <div id="login-screen" class="modal">
-        <div class="modal-content">
-            <h2 style="text-align:center; margin-bottom:20px; color:var(--primary)">Gestión Reparaciones</h2>
-            <input id="login-user" placeholder="Usuario">
-            <input id="login-pass" type="password" placeholder="Contraseña">
-            <button id="btn-login" class="btn primary" style="width:100%">INICIAR SESIÓN</button>
-        </div>
-    </div>
+    document.getElementById("modal-edit").classList.remove("hidden");
+};
 
-    <div id="main-screen" class="wrap hidden">
-        <div class="main-header">
-            <div class="grid-btns">
-                <button id="btn-theme" class="btn ghost">TEMA</button>
-                <button id="btn-export" class="btn ghost">RESPALDO</button>
-                <button id="btn-logout-trigger" class="btn danger">CERRAR</button>
-            </div>
-            <input id="search-input" placeholder="Buscar por Unidad o Apellido...">
-            <div class="grid-btns-2" style="margin-top:0">
-                <button id="btn-search" class="btn primary">BUSCAR</button>
-                <button id="btn-clear" class="btn ghost">LIMPIAR</button>
-            </div>
-        </div>
+// --- GUARDAR O ACTUALIZAR REPARACIÓN ---
+document.getElementById("btn-save-rep").onclick = async () => {
+    const desc = document.getElementById("r-desc").value;
+    if(!desc) return alert("Falta descripción");
+    
+    const r = {
+        id_uf: currentUFId,
+        descripcion: desc,
+        ejecutor: document.getElementById("r-ejecutor").value,
+        estado: document.getElementById("r-estado").value,
+        garantia: document.getElementById("r-garantia").value,
+        responsable: document.getElementById("r-resp").value,
+        observaciones: document.getElementById("r-obs").value,
+        fecha: new Date().toLocaleDateString()
+    };
 
-        <div class="content-body">
-            <div id="list"></div>
-        </div>
-    </div>
-
-    <div id="modal-logout" class="modal hidden">
-        <div class="modal-content" style="text-align:center">
-            <i class="fas fa-sign-out-alt" style="font-size:40px; color:var(--danger); margin-bottom:15px"></i>
-            <h3>Finalizar Sesión</h3>
-            <p style="margin:10px 0; font-size:14px; opacity:0.8">¿Desea cerrar el sistema de forma segura?</p>
-            <div class="grid-btns-2">
-                <button id="btn-logout-confirm" class="btn danger">SALIR</button>
-                <button onclick="cerrarModales()" class="btn ghost">CANCELAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-view" class="modal hidden">
-        <div class="modal-content">
-            <h3 id="view-title" style="color:var(--primary); margin-bottom:10px; text-align:center;"></h3>
-            <div id="view-reps-container" style="max-height: 350px; overflow-y: auto;"></div>
-            <button onclick="cerrarModales()" class="btn ghost" style="width:100%; margin-top:20px">VOLVER</button>
-        </div>
-    </div>
-
-    <div id="modal-edit" class="modal hidden">
-        <div class="modal-content">
-            <h3 id="edit-title" style="text-align:center; margin-bottom:15px">Nueva Reparación</h3>
-            <textarea id="r-desc" placeholder="Descripción del trabajo..."></textarea>
-            <input id="r-ejecutor" placeholder="Quién lo realizó">
-            <select id="r-estado">
-                <option value="Pendiente">Estado: Pendiente</option>
-                <option value="Terminado">Estado: Terminado</option>
-            </select>
-            <input id="r-garantia" type="number" placeholder="Garantía (Meses)">
-            <select id="r-resp">
-                <option value="Consorcio">Gasto: Consorcio</option>
-                <option value="Particular">Gasto: Particular</option>
-            </select>
-            <textarea id="r-obs" placeholder="Observaciones adicionales..."></textarea>
-            <div class="grid-btns-2">
-                <button id="btn-save-rep" class="btn primary">GUARDAR</button>
-                <button onclick="cerrarModales()" class="btn danger">DESCARTAR</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto", storageBucket: "gestionuf-remoto.firebasestorage.app", messagingSenderId: "724452752860", appId: "1:724452752860:web:4d25585addcdcbd146e319" };
-        const app = initializeApp(firebaseConfig); const db = getFirestore(app);
-        
-        let departamentos = [], currentUFId = null;
-
-        // --- NAVEGACIÓN COHETE ---
-        window.onscroll = () => { document.getElementById("btn-rocket").style.display = (window.scrollY > 300) ? "flex" : "none"; };
-        document.getElementById("btn-rocket").onclick = () => window.scrollTo({top: 0, behavior: 'smooth'});
-
-        // --- RENDERIZADO DE LISTA ---
-        function render(data) {
-            const list = document.getElementById("list");
-            list.innerHTML = "";
-            data.forEach(d => {
-                const div = document.createElement("div");
-                div.className = "item";
-                div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center">
-                        <div><b>UF: ${d.UF}</b><small>${d.Propietario || 'S/D'}</small></div>
-                        <div style="display:flex; gap:20px; font-size:20px">
-                            <i class="fas fa-eye" onclick="window.verHistorial('${d.id}', '${d.UF}')"></i>
-                            <i class="fas fa-edit" style="color:var(--primary)" onclick="window.nuevaReparacion('${d.id}', '${d.UF}')"></i>
-                        </div>
-                    </div>`;
-                list.appendChild(div);
-            });
-        }
-
-        // --- FUNCIONES DE REPARACIONES ---
-        window.verHistorial = async (docId, uf) => {
-            document.getElementById("view-title").innerText = `UF: ${uf}`;
-            const container = document.getElementById("view-reps-container");
-            container.innerHTML = "Cargando...";
-            document.getElementById("modal-view").classList.remove("hidden");
-
-            const q = query(collection(db, "reparaciones"), where("id_uf", "==", docId));
-            const snap = await getDocs(q);
-            container.innerHTML = snap.empty ? "<p style='text-align:center; opacity:0.6'>Sin registros.</p>" : "";
-            
-            snap.forEach(docSnap => {
-                const r = docSnap.data();
-                container.innerHTML += `
-                    <div class="rep-entry" style="border-left-color: ${r.estado === 'Terminado' ? 'var(--success)' : 'var(--danger)'}">
-                        <span class="ficha-label">FECHA:</span> ${r.fecha}
-                        <span class="ficha-label">TRABAJO:</span> ${r.descripcion}
-                        <span class="ficha-label">REALIZADO POR:</span> ${r.ejecutor}
-                        <span class="ficha-label">ESTADO:</span> ${r.estado}
-                        <span class="ficha-label">OBSERVACIONES:</span> ${r.observaciones || '---'}
-                    </div>`;
-            });
-        };
-
-        window.nuevaReparacion = (docId, uf) => {
-            currentUFId = docId;
-            document.getElementById("edit-title").innerText = `Nueva Reparación UF: ${uf}`;
-            document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
-            document.getElementById("modal-edit").classList.remove("hidden");
-        };
-
-        document.getElementById("btn-save-rep").onclick = async () => {
-            const desc = document.getElementById("r-desc").value;
-            if(!desc) return alert("Falta descripción");
-            
-            const r = {
-                id_uf: currentUFId,
-                descripcion: desc,
-                ejecutor: document.getElementById("r-ejecutor").value,
-                estado: document.getElementById("r-estado").value,
-                garantia: document.getElementById("r-garantia").value,
-                responsable: document.getElementById("r-resp").value,
-                observaciones: document.getElementById("r-obs").value,
-                fecha: new Date().toLocaleDateString()
-            };
+    try {
+        if (window.currentRepId) {
+            // Si ya existía, actualizamos el documento existente
+            const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            await updateDoc(doc(db, "reparaciones", window.currentRepId), r);
+        } else {
+            // Si no, creamos uno nuevo
             await addDoc(collection(db, "reparaciones"), r);
-            cerrarModales();
-            alert("Reparación registrada correctamente");
-        };
-
-        // --- EXPORTACIÓN (RESPALDO) ---
-        document.getElementById("btn-export").onclick = () => {
-            if(confirm("¿Desea descargar un respaldo de las unidades?")) {
-                const csv = "UF,Propietario,TelProp,Inquilino,TelInq\n" + 
-                departamentos.map(d => `"${d.UF}","${d.Propietario}","${d.TelefonoPropietario}","${d.Inquilino}","${d.TelefonoInquilino}"`).join("\n");
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `Respaldo_Reparaciones_${new Date().toISOString().slice(0,10)}.csv`;
-                link.click();
-            }
-        };
-
-        // --- LOGIN Y CONTROL ---
-        document.getElementById("btn-login").onclick = async () => {
-            const u = document.getElementById("login-user").value;
-            const p = document.getElementById("login-pass").value;
-            const q = query(collection(db, "usuarios"), where("usuario", "==", u), where("password", "==", p));
-            const snap = await getDocs(q);
-            if (!snap.empty) { localStorage.setItem("uf_auth", "true"); location.reload(); }
-            else alert("Acceso denegado");
-        };
-
-        if(localStorage.getItem("uf_auth") === "true") {
-            document.getElementById("login-screen").classList.add("hidden");
-            document.getElementById("main-screen").classList.remove("hidden");
-            onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
-                departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                render(departamentos);
-            });
         }
-
-        // Búsqueda
-        document.getElementById("btn-search").onclick = () => {
-            const v = document.getElementById("search-input").value.toLowerCase();
-            render(departamentos.filter(d => d.UF.toLowerCase().includes(v) || (d.Propietario||"").toLowerCase().includes(v)));
-        };
-        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
-
-        // Cerrar App
-        document.getElementById("btn-logout-trigger").onclick = () => document.getElementById("modal-logout").classList.remove("hidden");
-        document.getElementById("btn-logout-confirm").onclick = () => { localStorage.clear(); location.reload(); };
-
-        window.cerrarModales = () => { document.querySelectorAll(".modal").forEach(m => m.id !== "login-screen" && m.classList.add("hidden")); };
-        document.getElementById("btn-theme").onclick = () => document.body.classList.toggle("dark-mode");
-    </script>
-</body>
-</html>
+        cerrarModales();
+        alert("Datos guardados correctamente");
+    } catch (e) {
+        console.error("Error al guardar: ", e);
+    }
+};
