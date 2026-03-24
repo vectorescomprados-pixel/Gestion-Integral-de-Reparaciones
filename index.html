@@ -1,184 +1,86 @@
-﻿<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión de Reparaciones Pro</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; --warning: #f59e0b; --success: #22c55e; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
-        .wrap { width: 95%; max-width: 450px; }
-        .hidden { display: none !important; }
-        
-        /* Header ajustado según tus fotos */
-        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .content-body { margin-top: 220px; width: 100%; padding-bottom: 100px; }
-        
-        .grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-        .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
-        
-        /* Estilo de Tarjetas de la Foto 1 */
-        .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); position: relative; }
-        .item b { font-size: 16px; color: var(--primary); display: block; margin-bottom: 5px; }
-        
-        /* Estilo de Ficha Técnica de la Foto 2 (Modo Lectura) */
-        .ficha-lectura { border-top: 1px dashed var(--border); margin-top: 15px; padding-top: 10px; font-size: 14px; line-height: 1.8; }
-        .ficha-label { color: var(--primary); font-weight: bold; display: block; margin-top: 8px; }
-        .rep-entry { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary); }
+﻿<button id="btn-rocket" class="btn primary"><i class="fas fa-rocket"></i></button>
 
-        input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: #111b21; color: var(--text); }
-        textarea { height: 70px; padding: 10px; resize: none; }
+<script type="module">
+    // ... (Inicialización de Firebase y variables igual) ...
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
-    </style>
-</head>
-<body>
-
-    <div id="main-screen" class="wrap">
-        <div class="main-header">
-            <div class="grid-btns">
-                <button id="btn-theme" class="btn ghost">TEMA</button>
-                <button id="btn-export" class="btn ghost">RESPALDO</button>
-                <button onclick="location.reload()" class="btn danger">CERRAR</button>
-            </div>
-            <input id="search-input" placeholder="Buscar por Unidad o Apellido...">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button id="btn-search" class="btn primary">BUSCAR</button>
-                <button id="btn-clear" class="btn ghost">LIMPIAR</button>
-            </div>
-        </div>
-
-        <div class="content-body">
-            <div id="list"></div>
-        </div>
-    </div>
-
-    <div id="modal-view" class="modal hidden">
-        <div class="modal-content">
-            <h3 id="view-title" style="color:var(--primary); margin-bottom:10px;"></h3>
-            <div id="view-reps-container" class="ficha-lectura"></div>
-            <button onclick="cerrarModales()" class="btn ghost" style="width:100%; margin-top:20px">VOLVER</button>
-        </div>
-    </div>
-
-    <div id="modal-edit" class="modal hidden">
-        <div class="modal-content">
-            <h3 id="edit-title" style="text-align:center; margin-bottom:15px">Nueva Reparación</h3>
-            <textarea id="r-desc" placeholder="Descripción técnica del trabajo..."></textarea>
-            <input id="r-ejecutor" placeholder="Quién lo realizó">
-            <select id="r-estado">
-                <option value="Pendiente">Estado: Pendiente</option>
-                <option value="Terminado">Estado: Terminado</option>
-            </select>
-            <input id="r-garantia" type="number" placeholder="Garantía (Meses)">
-            <select id="r-resp">
-                <option value="Consorcio">Gasto: Consorcio</option>
-                <option value="Particular">Gasto: Particular</option>
-            </select>
-            <textarea id="r-obs" placeholder="Observaciones adicionales..."></textarea>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-                <button id="btn-save-rep" class="btn primary">GUARDAR</button>
-                <button onclick="cerrarModales()" class="btn danger">DESCARTAR</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto", storageBucket: "gestionuf-remoto.firebasestorage.app", messagingSenderId: "724452752860", appId: "1:724452752860:web:4d25585addcdcbd146e319" };
-        const app = initializeApp(firebaseConfig); const db = getFirestore(app);
-        
-        let departamentosGlobal = [], currentUFId = null;
-
-        // RENDERIZADO CORREGIDO: Usamos el ID de Firebase directamente
-        function render(data) {
-            const list = document.getElementById("list");
-            list.innerHTML = "";
-            data.forEach(d => {
-                const div = document.createElement("div");
-                div.className = "item";
-                div.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:center">
-                        <div><b>UF: ${d.UF}</b><small>${d.Propietario || 'S/D'}</small></div>
-                        <div style="display:flex; gap:20px; font-size:20px">
-                            <i class="fas fa-eye" onclick="window.verHistorial('${d.id}', '${d.UF}')"></i>
-                            <i class="fas fa-edit" style="color:var(--primary)" onclick="window.nuevaReparacion('${d.id}', '${d.UF}')"></i>
-                        </div>
-                    </div>`;
-                list.appendChild(div);
-            });
+    // --- 1. RESTAURACIÓN DEL COHETE ---
+    // Controla la visibilidad al hacer scroll
+    window.onscroll = () => { 
+        const rocket = document.getElementById("btn-rocket");
+        if (rocket) {
+            rocket.style.display = (window.scrollY > 300) ? "flex" : "none"; 
         }
+    };
+    // Acción de volver al inicio
+    document.getElementById("btn-rocket").onclick = () => {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        writeLog("Volviendo al principio", "info");
+    };
 
-        // MODO LECTURA: Estilo Ficha Técnica (Sin botones de llamada)
-        window.verHistorial = async (docId, uf) => {
-            document.getElementById("view-title").innerText = `UF: ${uf}`;
-            const container = document.getElementById("view-reps-container");
-            container.innerHTML = "Buscando registros...";
-            document.getElementById("modal-view").classList.remove("hidden");
-
-            const q = query(collection(db, "reparaciones"), where("id_uf", "==", docId));
-            const snap = await getDocs(q);
-            container.innerHTML = snap.empty ? "<p>No hay reparaciones en esta unidad.</p>" : "";
-            
-            snap.forEach(docSnap => {
-                const r = docSnap.data();
-                container.innerHTML += `
-                    <div class="rep-entry" style="border-left-color: ${r.estado === 'Terminado' ? 'var(--success)' : 'var(--danger)'}">
-                        <span class="ficha-label">TRABAJO (${r.fecha}):</span> ${r.descripcion}
-                        <span class="ficha-label">REALIZADO POR:</span> ${r.ejecutor}
-                        <span class="ficha-label">GARANTÍA / RESPONSABLE:</span> ${r.garantia} Meses | ${r.responsable}
-                        <span class="ficha-label">OBSERVACIONES:</span> ${r.observaciones || 'Sin observaciones'}
-                    </div>`;
-            });
+    // --- 2. CORRECCIÓN BOTÓN RESPALDO (EXPORTACIÓN) ---
+    // La función askConfirm ya estaba preparada, pero faltaba asegurar la ejecución
+    const btnExp = document.getElementById("btn-export");
+    if(btnExp) {
+        btnExp.onclick = () => {
+            // Llama al modal de confirmación con la acción 'export'
+            window.askConfirm("¿Desea descargar un respaldo en CSV?", "export");
         };
+    }
 
-        // MODO EDICIÓN: Corregido para usar el ID de búsqueda
-        window.nuevaReparacion = (docId, uf) => {
-            currentUFId = docId;
-            document.getElementById("edit-title").innerText = `Nueva Reparación UF: ${uf}`;
-            document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
-            document.getElementById("modal-edit").classList.remove("hidden");
+    // --- 3. CORRECCIÓN BOTÓN CERRAR (MODAL DE ADVERTENCIA) ---
+    // Cambiamos la lógica del botón CERRAR de la cabecera para que abra el modal
+    const btnCerrarApp = document.getElementById("btn-logout-trigger");
+    if(btnCerrarApp) {
+        btnCerrarApp.onclick = () => {
+            const modalLogout = document.getElementById("modal-logout");
+            if(modalLogout) {
+                modalLogout.classList.remove("hidden"); // Muestra el cartel de la foto
+                writeLog("Solicitud de cierre de sesión", "warn");
+            }
         };
+    }
 
-        document.getElementById("btn-save-rep").onclick = async () => {
-            if(!document.getElementById("r-desc").value) return alert("Debe describir el trabajo");
-            const r = {
-                id_uf: currentUFId,
-                descripcion: document.getElementById("r-desc").value,
-                ejecutor: document.getElementById("r-ejecutor").value,
-                estado: document.getElementById("r-estado").value,
-                garantia: document.getElementById("r-garantia").value,
-                responsable: document.getElementById("r-resp").value,
-                observaciones: document.getElementById("r-obs").value,
-                fecha: new Date().toLocaleDateString()
-            };
-            await addDoc(collection(db, "reparaciones"), r);
-            cerrarModales();
-            alert("Guardado exitosamente");
-        };
+    // Lógica del botón SALIR dentro del modal
+    document.getElementById("btn-logout-confirm").onclick = () => {
+        writeLog("Sesión cerrada de forma segura", "warn");
+        localStorage.clear(); // Limpia la autenticación
+        location.reload();    // Recarga para volver al login
+    };
 
-        window.cerrarModales = () => { document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden")); };
+    // --- AJUSTE EN btn-confirm-yes PARA EXPORTACIÓN ---
+    // Asegúrate de que la lógica de exportación dentro de btn-confirm-yes sea esta:
+    document.getElementById("btn-confirm-yes").onclick = async () => {
+        if(document.getElementById("confirm-pass").value !== MASTER_CODE) {
+            writeLog("Autorización fallida", "err");
+            return alert("Clave Incorrecta");
+        }
+        document.getElementById("modal-confirm").classList.add("hidden");
 
-        // SYNC INICIAL
-        onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
-            departamentosGlobal = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            render(departamentosGlobal);
-        });
+        if(pendingAction.type === 'export') {
+            try {
+                // Genera el contenido CSV
+                const encabezados = "UF,Propietario,TelProp,Inquilino,TelInq\n";
+                const filas = departamentos.map(d => 
+                    `"${d.UF}","${d.Propietario || ''}","${d.TelefonoPropietario || ''}","${d.Inquilino || ''}","${d.TelefonoInquilino || ''}"`
+                ).join("\n");
+                
+                const csvContent = encabezados + filas;
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Respaldo_UF_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                writeLog("Respaldo CSV generado con éxito", "success");
+            } catch (err) {
+                writeLog("Error al exportar: " + err.message, "err");
+            }
+        } 
+        // ... (resto de acciones como delete o deleteAll)
+    };
 
-        // BÚSQUEDA CORREGIDA
-        document.getElementById("btn-search").onclick = () => {
-            const v = document.getElementById("search-input").value.toLowerCase();
-            const filtrados = departamentosGlobal.filter(d => d.UF.toLowerCase().includes(v) || (d.Propietario||"").toLowerCase().includes(v));
-            render(filtrados);
-        };
-        
-        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentosGlobal); };
-    </script>
-</body>
-</html>
+</script>
