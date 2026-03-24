@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Desbloqueo Total</title>
+    <title>Gestión Reparaciones - Fix Total</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
@@ -18,15 +18,16 @@
         .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
         .details { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 14px; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
         input, select, textarea { width: 100%; height: 40px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); padding: 0 10px; background: #0b141a; color: var(--text); }
-        textarea { height: 80px; padding: 10px; resize: none; }
+        textarea { height: 70px; padding: 10px; resize: none; }
+        label { font-size: 11px; opacity: 0.7; display: block; margin-bottom: 3px; }
         .rep-card { background: rgba(37, 99, 235, 0.1); padding: 10px; border-radius: 8px; margin-top: 8px; border-left: 4px solid var(--primary); }
     </style>
 </head>
 <body class="dark-mode">
 
-    <div id="main-screen" class="wrap">
+    <div class="wrap">
         <div class="main-header">
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px;">
                 <button id="btn-theme" class="btn ghost">TEMA</button>
@@ -45,22 +46,30 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 style="text-align:center; margin-bottom:15px; color:var(--primary)">Cargar/Editar Registro</h3>
-            <p id="confirm-owner" style="font-size:12px; text-align:center; margin-bottom:10px; font-weight:bold; color:var(--primary)"></p>
+            <h3 style="text-align:center; margin-bottom:10px; color:var(--primary)">Datos de Reparación</h3>
+            <p id="confirm-owner" style="font-size:12px; text-align:center; margin-bottom:15px; font-weight:bold; color:var(--primary)"></p>
             
-            <label style="font-size:11px; opacity:0.7">Descripción del trabajo:</label>
-            <textarea id="r-desc" placeholder="Escriba aquí la reparación..."></textarea>
+            <label>Descripción:</label>
+            <textarea id="r-desc" placeholder="¿Qué se reparó?"></textarea>
             
-            <label style="font-size:11px; opacity:0.7">Técnico:</label>
-            <input id="r-ejecutor" placeholder="Nombre del técnico">
+            <label>Técnico / Empresa:</label>
+            <input id="r-ejecutor" placeholder="Nombre">
             
-            <label style="font-size:11px; opacity:0.7">Estado:</label>
-            <select id="r-estado">
-                <option value="Pendiente">Pendiente</option>
-                <option value="Terminado">Terminado</option>
-            </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label>Estado:</label>
+                    <select id="r-estado">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Terminado">Terminado</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Garantía (Meses):</label>
+                    <input id="r-garantia" type="number" placeholder="0">
+                </div>
+            </div>
             
-            <label style="font-size:11px; opacity:0.7">Responsable del gasto:</label>
+            <label>Responsable del Gasto:</label>
             <select id="r-resp">
                 <option value="Consorcio">Consorcio</option>
                 <option value="Particular">Particular</option>
@@ -68,7 +77,7 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top:15px">
                 <button id="btn-save" class="btn primary">GUARDAR</button>
-                <button onclick="cerrarModales()" class="btn danger">CANCELAR</button>
+                <button onclick="window.cerrarModales()" class="btn danger">CANCELAR</button>
             </div>
         </div>
     </div>
@@ -82,18 +91,17 @@
         
         let departamentos = [], currentUFId = null, currentRepDocId = null;
 
-        // --- FUNCIONES CORE ---
-
-        async function refreshAll() {
+        // --- REFRESCAR SIN BLOQUEOS ---
+        window.refreshAll = async () => {
             const btn = document.getElementById("btn-refresh");
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             try {
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderList(departamentos);
-            } catch (e) { alert("Error de conexión"); }
+            } catch (e) { console.error("Error al refrescar:", e); }
             btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
-        }
+        };
 
         function renderList(data) {
             const list = document.getElementById("list");
@@ -105,8 +113,8 @@
                     <div style="display:flex; justify-content:space-between; align-items:center">
                         <div><b>UF: ${d.UF}</b><small>${d.Propietario}</small></div>
                         <div style="display:flex; gap:25px; font-size:22px">
-                            <i class="fas fa-tools" title="Ver Historial" onclick="window.toggleHistorial('${d.id}')"></i>
-                            <i class="fas fa-edit" title="Editar" style="color:var(--primary)" onclick="window.prepararEdicion('${d.id}', '${d.UF}', '${d.Propietario}')"></i>
+                            <i class="fas fa-tools" onclick="window.toggleHistorial('${d.id}')"></i>
+                            <i class="fas fa-edit" style="color:var(--primary)" onclick="window.abrirEditor('${d.id}', '${d.UF}', '${d.Propietario}')"></i>
                         </div>
                     </div>
                     <div id="det-${d.id}" class="details hidden">
@@ -121,35 +129,35 @@
             el.classList.toggle('hidden');
             if(!el.classList.contains('hidden')) {
                 const hist = document.getElementById(`historial-${id}`);
-                hist.innerHTML = "<small>Cargando...</small>";
+                hist.innerHTML = "<small>Buscando...</small>";
                 const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
                 hist.innerHTML = snap.empty ? "<small>Sin registros.</small>" : "";
                 snap.forEach(docSnap => {
                     const r = docSnap.data();
-                    hist.innerHTML += `<div class="rep-card"><b>${r.fecha}:</b> ${r.descripcion}<br><small>${r.estado} | ${r.responsable}</small></div>`;
+                    hist.innerHTML += `<div class="rep-card"><b>${r.fecha}:</b> ${r.descripcion}<br><small>Técnico: ${r.ejecutor} | Garantía: ${r.garantia || 0}m</small></div>`;
                 });
             }
         };
 
-        window.prepararEdicion = async (id, uf, propietario) => {
-            console.log("Abriendo editor para:", uf);
-            currentUFId = id; 
-            currentRepDocId = null;
-            document.getElementById("confirm-owner").innerText = `Editando UF ${uf} (${propietario})`;
+        window.abrirEditor = async (id, uf, propietario) => {
+            currentUFId = id; currentRepDocId = null;
+            document.getElementById("confirm-owner").innerText = `UF ${uf} - ${propietario}`;
             
-            // Limpiar campos
+            // Limpieza manual de campos
             document.getElementById("r-desc").value = "";
             document.getElementById("r-ejecutor").value = "";
+            document.getElementById("r-garantia").value = "";
             document.getElementById("r-estado").value = "Pendiente";
             document.getElementById("r-resp").value = "Consorcio";
 
-            // Buscar si ya existe para cargar datos
+            // Buscar datos existentes
             const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
             if(!snap.empty) {
                 const r = snap.docs.data();
                 currentRepDocId = snap.docs.id;
                 document.getElementById("r-desc").value = r.descripcion || "";
                 document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                document.getElementById("r-garantia").value = r.garantia || "";
                 document.getElementById("r-estado").value = r.estado || "Pendiente";
                 document.getElementById("r-resp").value = r.responsable || "Consorcio";
             }
@@ -157,12 +165,14 @@
         };
 
         document.getElementById("btn-save").onclick = async () => {
-            if(!document.getElementById("r-desc").value) return alert("Falta la descripción");
+            const desc = document.getElementById("r-desc").value;
+            if(!desc) return alert("Complete la descripción");
             
-            const data = {
+            const payload = {
                 id_uf: currentUFId,
-                descripcion: document.getElementById("r-desc").value,
+                descripcion: desc,
                 ejecutor: document.getElementById("r-ejecutor").value,
+                garantia: document.getElementById("r-garantia").value,
                 estado: document.getElementById("r-estado").value,
                 responsable: document.getElementById("r-resp").value,
                 fecha: new Date().toLocaleDateString()
@@ -170,27 +180,26 @@
 
             try {
                 if(currentRepDocId) {
-                    await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
+                    await updateDoc(doc(db, "reparaciones", currentRepDocId), payload);
                 } else {
-                    await addDoc(collection(db, "reparaciones"), data);
+                    await addDoc(collection(db, "reparaciones"), payload);
                 }
-                cerrarModales();
-                alert("Guardado correctamente");
-                refreshAll();
+                window.cerrarModales();
+                alert("Guardado");
+                // Refresco diferido para evitar el bloqueo del botón
+                setTimeout(() => { window.refreshAll(); }, 500);
             } catch (e) { alert("Error al guardar"); }
         };
 
-        // --- UTILIDADES ---
-        document.getElementById("btn-refresh").onclick = refreshAll;
-        window.cerrarModales = () => document.getElementById("modal-edit").classList.add("hidden");
+        window.cerrarModales = () => { document.getElementById("modal-edit").classList.add("hidden"); };
+        document.getElementById("btn-refresh").onclick = () => window.refreshAll();
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
             renderList(departamentos.filter(d => d.UF.toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
         };
         document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; renderList(departamentos); };
 
-        // Carga Inicial
-        refreshAll();
+        window.refreshAll(); // Carga inicial
     </script>
 </body>
 </html>
