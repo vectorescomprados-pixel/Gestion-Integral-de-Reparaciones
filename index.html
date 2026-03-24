@@ -3,13 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Versión Final</title>
+    <title>Gestión Reparaciones - FIX FINAL</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
-        .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 150px; padding-bottom: 20px; }
+        .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 160px; padding-bottom: 20px; }
         .hidden { display: none !important; }
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .search-box { display: flex; gap: 8px; margin-top: 10px; }
@@ -19,7 +19,7 @@
         .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); }
         .hist-item { background: #1a242d; padding: 10px; margin-top: 8px; border-radius: 6px; font-size: 0.9em; border-left: 3px solid var(--primary); }
     </style>
@@ -71,7 +71,7 @@
             </div>
 
             <div style="display:flex; gap:10px; margin-top:15px">
-                <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cancelar</button>
+                <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cerrar</button>
                 <button class="btn btn-primary" style="flex:1" onclick="window.saveRep()">Guardar</button>
             </div>
         </div>
@@ -79,7 +79,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, updateDoc, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, updateDoc, doc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo",
@@ -101,7 +101,7 @@
             const list = document.getElementById("listado");
             list.innerHTML = "Actualizando...";
             try {
-                const snap = await getDocs(collection(db, "departamentos"));
+                const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 render(departamentos);
             } catch (e) { console.error(e); }
@@ -133,7 +133,7 @@
             currentRepDocId = null;
             document.getElementById("m-title").innerText = "Editar UF " + uf;
             
-            // Limpieza manual de campos
+            // Limpiar campos antes de la carga
             document.getElementById("r-descripcion").value = "";
             document.getElementById("r-ejecutor").value = "";
             document.getElementById("r-garantia").value = "";
@@ -147,22 +147,22 @@
                 const snap = await getDocs(q);
                 
                 if (!snap.empty) {
-                    // SELECCIÓN SEGURA DEL DOCUMENTO
-                    const docsList = snap.docs;
-                    const docSnap = docsList; // Extraemos el primer documento de la lista
-                    
-                    const r = docSnap.data(); // Ahora sí extraemos el objeto de datos
-                    currentRepDocId = docSnap.id; 
+                    // CAMBIO CLAVE: Iteramos sobre los docs para evitar el error de función
+                    snap.forEach((docSnapshot) => {
+                        if (!currentRepDocId) { // Solo tomamos el primero
+                            const r = docSnapshot.data();
+                            currentRepDocId = docSnapshot.id;
 
-                    // LLENADO FORZADO DE CAMPOS
-                    document.getElementById("r-descripcion").value = r.descripcion || "";
-                    document.getElementById("r-ejecutor").value    = r.ejecutor || "";
-                    document.getElementById("r-garantia").value    = r.garantia || "";
-                    document.getElementById("r-estado").value      = r.estado || "Pendiente";
-                    document.getElementById("r-responsable").value = r.responsable || "Consorcio";
+                            document.getElementById("r-descripcion").value = r.descripcion || "";
+                            document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                            document.getElementById("r-garantia").value = r.garantia || "";
+                            document.getElementById("r-estado").value = r.estado || "Pendiente";
+                            document.getElementById("r-responsable").value = r.responsable || "Consorcio";
+                        }
+                    });
                 }
             } catch (e) {
-                console.error("Error crítico en openEdit:", e);
+                console.error("Error en openEdit:", e);
             }
         };
 
@@ -184,7 +184,7 @@
                     await addDoc(collection(db, "reparaciones"), data);
                 }
                 document.getElementById("modal-edit").classList.add("hidden");
-                alert("Guardado con éxito");
+                alert("Guardado");
                 window.loadData();
             } catch (e) { alert("Error al guardar"); }
         };
@@ -193,20 +193,22 @@
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "<small>Cargando historial...</small>";
-                const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
-                const snap = await getDocs(q);
-                el.innerHTML = snap.empty ? "Sin registros previos" : "";
-                snap.forEach(ds => {
-                    const r = ds.data();
-                    el.innerHTML += `<div class="hist-item"><b>${r.fecha}:</b> ${r.descripcion}</div>`;
-                });
+                el.innerHTML = "<small>Cargando...</small>";
+                try {
+                    const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
+                    const snap = await getDocs(q);
+                    el.innerHTML = snap.empty ? "Sin registros" : "";
+                    snap.forEach(ds => {
+                        const r = ds.data();
+                        el.innerHTML += `<div class="hist-item"><b>${r.fecha}:</b> ${r.descripcion}</div>`;
+                    });
+                } catch (e) { el.innerHTML = "Error al cargar historial"; }
             }
         };
 
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
-            render(departamentos.filter(d => d.UF.toString().includes(v) || d.Propietario.toLowerCase().includes(v)));
+            render(departamentos.filter(d => d.UF.toString().toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
         };
         document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
         document.getElementById("btn-refresh").onclick = () => window.loadData();
