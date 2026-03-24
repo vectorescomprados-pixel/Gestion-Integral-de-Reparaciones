@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Enterprise</title>
+    <title>Gestión Reparaciones - Confirmación de Datos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; --warning: #f59e0b; --success: #22c55e; }
@@ -29,9 +29,10 @@
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
         input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: #0b141a; color: var(--text); }
         textarea { height: 80px; padding: 10px; resize: none; }
+        .label-confirm { color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 15px; display: block; text-align: center; background: rgba(37, 99, 235, 0.1); padding: 8px; border-radius: 8px; }
     </style>
 </head>
-<body>
+<body class="dark-mode">
 
     <button id="btn-rocket" class="btn primary"><i class="fas fa-rocket"></i></button>
 
@@ -53,7 +54,9 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 id="edit-title" style="text-align:center; margin-bottom:15px">Registrar Reparación</h3>
+            <h3 id="edit-title" style="text-align:center; margin-bottom:5px">Reparación</h3>
+            <span id="confirm-owner" class="label-confirm">Propietario: ---</span>
+            
             <textarea id="r-desc" placeholder="Descripción técnica..."></textarea>
             <input id="r-ejecutor" placeholder="Técnico / Empresa">
             <select id="r-estado">
@@ -81,11 +84,9 @@
         const app = initializeApp(firebaseConfig); const db = getFirestore(app);
         let departamentos = [], currentUFId = null, currentRepId = null;
 
-        // COHETE
         window.onscroll = () => { document.getElementById("btn-rocket").style.display = (window.scrollY > 300) ? "flex" : "none"; };
         document.getElementById("btn-rocket").onclick = () => window.scrollTo({top: 0, behavior: 'smooth'});
 
-        // RENDERIZADO CON ICONO HERRAMIENTAS PARA EXPANDIR
         function render(data) {
             const list = document.getElementById("list");
             list.innerHTML = "";
@@ -97,8 +98,8 @@
                     <div style="display:flex; justify-content:space-between; align-items:center">
                         <div><b>UF: ${d.UF}</b><small>${d.Propietario || 'S/D'}</small></div>
                         <div style="display:flex; gap:20px; font-size:20px">
-                            <i class="fas fa-tools" title="Ver Detalle" onclick="document.getElementById('det-${d.id}').classList.toggle('hidden')"></i>
-                            <i class="fas fa-edit" style="color:var(--primary)" title="Editar Reparación" onclick="window.abrirEditor('${d.id}', '${d.UF}')"></i>
+                            <i class="fas fa-tools" onclick="document.getElementById('det-${d.id}').classList.toggle('hidden')"></i>
+                            <i class="fas fa-edit" style="color:var(--primary)" onclick="window.abrirEditor('${d.id}', '${d.UF}', '${d.Propietario}')"></i>
                         </div>
                     </div>
                     <div id="det-${d.id}" class="details hidden">
@@ -115,10 +116,12 @@
             });
         }
 
-        // ABRIR EDITOR DE REPARACIÓN (CARGA DATOS SI EXISTEN)
-        window.abrirEditor = async (id, uf) => {
+        // ABRIR EDITOR CON VERIFICACIÓN DE PROPIETARIO
+        window.abrirEditor = async (id, uf, propietario) => {
             currentUFId = id; currentRepId = null;
             document.getElementById("edit-title").innerText = `Gestionar Reparación UF: ${uf}`;
+            document.getElementById("confirm-owner").innerText = `Propietario: ${propietario}`; // MUESTRA NOMBRE PARA CORROBORAR
+            
             document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
             
             const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
@@ -134,7 +137,6 @@
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
-        // GUARDAR CAMBIOS
         document.getElementById("btn-save").onclick = async () => {
             const desc = document.getElementById("r-desc").value;
             if(!desc) return alert("Ingrese descripción");
@@ -146,13 +148,11 @@
             cerrarModales(); alert("Guardado correctamente");
         };
 
-        // CARGA INICIAL
         onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
             departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             render(departamentos);
         });
 
-        // FUNCIONES EXTRA
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
             render(departamentos.filter(d => d.UF.toLowerCase().includes(v) || (d.Propietario||"").toLowerCase().includes(v)));
@@ -161,7 +161,6 @@
         document.getElementById("btn-logout").onclick = () => location.reload();
         window.cerrarModales = () => document.getElementById("modal-edit").classList.add("hidden");
         document.getElementById("btn-theme").onclick = () => document.body.classList.toggle("dark-mode");
-        document.getElementById("btn-export").onclick = () => alert("Generando Respaldo CSV...");
     </script>
 </body>
 </html>
