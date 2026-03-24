@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión Reparaciones - Versión Estable</title>
+    <title>Gestión Reparaciones - Sync Fix Final</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; }
@@ -21,7 +21,7 @@
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
         input, select, textarea { width: 100%; height: 40px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border); padding: 0 10px; background: #0b141a; color: var(--text); }
         textarea { height: 70px; padding: 10px; resize: none; }
-        .rep-card { background: rgba(37, 99, 235, 0.1); padding: 10px; border-radius: 8px; margin-top: 8px; border-left: 4px solid var(--primary); position: relative; }
+        .rep-card { background: rgba(37, 99, 235, 0.1); padding: 10px; border-radius: 8px; margin-top: 8px; border-left: 4px solid var(--primary); }
     </style>
 </head>
 <body class="dark-mode">
@@ -45,8 +45,8 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 id="modal-title" style="text-align:center; margin-bottom:15px; color:var(--primary)">Cargar Reparación</h3>
-            <p id="confirm-owner" style="font-size:12px; text-align:center; margin-bottom:10px; opacity:0.8"></p>
+            <h3 style="text-align:center; margin-bottom:15px; color:var(--primary)">Editar Reparación</h3>
+            <p id="confirm-owner" style="font-size:12px; text-align:center; margin-bottom:10px; font-weight:bold"></p>
             <textarea id="r-desc" placeholder="Descripción del trabajo..."></textarea>
             <input id="r-ejecutor" placeholder="Técnico responsable">
             <select id="r-estado">
@@ -66,19 +66,21 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto", storageBucket: "gestionuf-remoto.firebasestorage.app", messagingSenderId: "724452752860", appId: "1:724452752860:web:4d25585addcdcbd146e319" };
         const app = initializeApp(firebaseConfig); const db = getFirestore(app);
-        let departamentos = [], currentUFId = null;
+        let departamentos = [], currentUFId = null, currentRepDocId = null;
 
-        // REFRESCO FORZADO
+        // FUNCIÓN DE REFRESCO MEJORADA (EVITA EL GIRO INFINITO)
         window.forceRefresh = async () => {
             const btn = document.getElementById("btn-refresh");
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
-            departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            render(departamentos);
+            try {
+                const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
+                departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                render(departamentos);
+            } catch (e) { console.error(e); }
             btn.innerHTML = '<i class="fas fa-sync-alt"></i>';
         };
         document.getElementById("btn-refresh").onclick = forceRefresh;
@@ -109,31 +111,40 @@
             el.classList.toggle('hidden');
             if(!el.classList.contains('hidden')) {
                 const hist = document.getElementById(`historial-${id}`);
-                hist.innerHTML = "<small>Buscando...</small>";
-                const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
-                const snap = await getDocs(q);
+                hist.innerHTML = "<small>Buscando datos...</small>";
+                const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
                 hist.innerHTML = snap.empty ? "<small>Sin reparaciones.</small>" : "";
                 snap.forEach(docSnap => {
                     const r = docSnap.data();
                     hist.innerHTML += `<div class="rep-card">
                         <b>${r.fecha}:</b> ${r.descripcion}<br>
-                        <small>Responsable: ${r.responsable} | Técnico: ${r.ejecutor}</small>
-                        <i class="fas fa-trash" style="position:absolute; right:10px; top:10px; color:var(--danger)" onclick="window.borrarRep('${docSnap.id}', '${id}')"></i>
+                        <small>Estado: ${r.estado} | Gasto: ${r.responsable}</small>
                     </div>`;
                 });
             }
         };
 
-        window.abrirEditor = (id, uf, propietario) => {
-            currentUFId = id;
-            document.getElementById("confirm-owner").innerText = `Corroborar: UF ${uf} - ${propietario}`;
+        window.abrirEditor = async (id, uf, propietario) => {
+            currentUFId = id; currentRepDocId = null;
+            document.getElementById("confirm-owner").innerText = `Verificado: UF ${uf} - ${propietario}`;
             document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
+            
+            // CARGA DE DATOS PARA EDITAR (SOLUCIONA EL CUADRO VACÍO)
+            const snap = await getDocs(query(collection(db, "reparaciones"), where("id_uf", "==", id)));
+            if(!snap.empty) {
+                const r = snap.docs.data();
+                currentRepDocId = snap.docs.id; // Guardamos el ID real para no duplicar
+                document.getElementById("r-desc").value = r.descripcion || "";
+                document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                document.getElementById("r-estado").value = r.estado || "Pendiente";
+                document.getElementById("r-resp").value = r.responsable || "Consorcio";
+            }
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
         document.getElementById("btn-save").onclick = async () => {
             const desc = document.getElementById("r-desc").value;
-            if(!desc) return alert("Ingrese descripción");
+            if(!desc) return alert("Falta descripción");
 
             const r = { 
                 id_uf: currentUFId, 
@@ -144,23 +155,20 @@
                 fecha: new Date().toLocaleDateString() 
             };
 
-            await addDoc(collection(db, "reparaciones"), r);
-            cerrarModales();
-            alert("Guardado");
-            window.verHistorial(currentUFId); // Muestra el historial actualizado
+            try {
+                if(currentRepDocId) {
+                    await updateDoc(doc(db, "reparaciones", currentRepDocId), r);
+                } else {
+                    await addDoc(collection(db, "reparaciones"), r);
+                }
+                cerrarModales();
+                alert("Guardado y Sincronizado");
+                forceRefresh();
+            } catch (e) { alert("Error al guardar"); }
         };
 
-        window.borrarRep = async (repId, ufId) => {
-            if(confirm("¿Borrar esta reparación?")) {
-                await deleteDoc(doc(db, "reparaciones", repId));
-                window.verHistorial(ufId);
-            }
-        };
-
-        onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
-            departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            render(departamentos);
-        });
+        // CARGA INICIAL
+        forceRefresh();
 
         window.cerrarModales = () => document.getElementById("modal-edit").classList.add("hidden");
         document.getElementById("btn-search").onclick = () => {
