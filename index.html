@@ -161,4 +161,92 @@
                             </div>
                             <div style="display:flex; gap:8px">
                                 <button title="Nuevo" class="btn btn-success" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button title="Gestionar" class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa
+                                <button title="Gestionar" class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Gestionar</button>
+                            </div>
+                        </div>
+                        <div id="det-${d.id}" class="hidden" style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px"></div>
+                    </div>`;
+            });
+        }
+
+        window.openNew = (id, uf) => {
+            currentUFId = id; currentRepDocId = null;
+            document.getElementById("m-title").innerText = "Nueva Reparación UF " + uf;
+            document.getElementById("r-descripcion").value = "";
+            document.getElementById("r-ejecutor").value = "";
+            document.getElementById("r-estado").value = "Pendiente";
+            document.getElementById("modal-edit").classList.remove("hidden");
+        };
+
+        window.editSpecific = async (docId, uf) => {
+            currentRepDocId = docId;
+            document.getElementById("m-title").innerText = "Editando - UF " + uf;
+            try {
+                const docSnap = await getDoc(doc(db, "reparaciones", docId));
+                if (docSnap.exists()) {
+                    const r = docSnap.data();
+                    currentUFId = r.id_uf;
+                    document.getElementById("r-descripcion").value = r.descripcion || "";
+                    document.getElementById("r-ejecutor").value = r.ejecutor || "";
+                    document.getElementById("r-estado").value = r.estado || "Pendiente";
+                    document.getElementById("r-responsable").value = r.responsable || "Consorcio";
+                    document.getElementById("modal-edit").classList.remove("hidden");
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        window.saveRep = async () => {
+            const data = {
+                id_uf: currentUFId,
+                descripcion: document.getElementById("r-descripcion").value,
+                ejecutor: document.getElementById("r-ejecutor").value,
+                estado: document.getElementById("r-estado").value,
+                responsable: document.getElementById("r-responsable").value,
+                fecha: new Date().toLocaleDateString()
+            };
+            try {
+                if (currentRepDocId) await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
+                else await addDoc(collection(db, "reparaciones"), data);
+                window.closeModal();
+                window.loadData();
+            } catch (e) { alert("Error al guardar"); }
+        };
+
+        window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
+
+        window.verHist = async (id, uf) => {
+            const el = document.getElementById("det-" + id);
+            el.classList.toggle("hidden");
+            if(!el.classList.contains("hidden")) {
+                el.innerHTML = "Cargando...";
+                try {
+                    const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
+                    const snap = await getDocs(q);
+                    el.innerHTML = snap.empty ? "Sin registros" : "";
+                    snap.forEach(ds => {
+                        const r = ds.data();
+                        const cl = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
+                        el.innerHTML += `
+                            <div class="hist-item ${cl}">
+                                <div style="display:flex; justify-content:space-between">
+                                    <div style="flex:1"><b>${r.fecha}:</b> ${r.descripcion}</div>
+                                    <button class="btn btn-primary" style="padding:5px 8px" onclick="window.editSpecific('${ds.id}', '${uf}')"><i class="fas fa-edit"></i></button>
+                                </div>
+                            </div>`;
+                    });
+                } catch (e) { el.innerHTML = "Error"; }
+            }
+        };
+
+        // Buscador
+        document.getElementById("btn-search").onclick = () => {
+            const v = document.getElementById("search-input").value.toLowerCase();
+            render(departamentos.filter(d => d.UF.toString().toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
+        };
+        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
+        document.getElementById("btn-refresh").onclick = () => window.loadData();
+
+        window.loadData();
+    </script>
+</body>
+</html>
