@@ -3,49 +3,52 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
-    <title>Gestión de Reparaciones - Enterprise</title>
+    <title>Gestión de Reparaciones Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #f0f2f5; --card: #ffffff; --primary: #2563eb; --danger: #e11d48; --text: #1f293b; --border: #e5e7eb; --warning: #f59e0b; --success: #22c55e; }
-        body.dark-mode { --bg: #0b141a; --card: #111b21; --text: #e9edef; --border: #222d34; }
+        :root { --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; --text: #e9edef; --border: #222d34; --warning: #f59e0b; --success: #22c55e; }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
-        .wrap { width: 95%; max-width: 450px; position: relative; }
+        .wrap { width: 95%; max-width: 450px; }
         .hidden { display: none !important; }
-        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; }
-        .content-body { margin-top: 250px; width: 100%; padding-bottom: 100px; }
+        
+        /* Header ajustado según tus fotos */
+        .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); border-radius: 0 0 15px 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .content-body { margin-top: 220px; width: 100%; padding-bottom: 100px; }
+        
         .grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
         .btn { height: 42px; border-radius: 8px; border: none; font-weight: bold; font-size: 11px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .primary { background: var(--primary); } .danger { background: var(--danger); } .ghost { background: #64748b; }
-        .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .rep-card { border-radius: 8px; padding: 10px; margin-top: 8px; background: rgba(0,0,0,0.15); border-left: 4px solid var(--primary); font-size: 13px; }
-        input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: var(--bg); color: var(--text); }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; }
+        
+        /* Estilo de Tarjetas de la Foto 1 */
+        .item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); position: relative; }
+        .item b { font-size: 16px; color: var(--primary); display: block; margin-bottom: 5px; }
+        
+        /* Estilo de Ficha Técnica de la Foto 2 (Modo Lectura) */
+        .ficha-lectura { border-top: 1px dashed var(--border); margin-top: 15px; padding-top: 10px; font-size: 14px; line-height: 1.8; }
+        .ficha-label { color: var(--primary); font-weight: bold; display: block; margin-top: 8px; }
+        .rep-entry { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--primary); }
+
+        input, select, textarea { width: 100%; height: 45px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); padding: 0 15px; background: #111b21; color: var(--text); }
+        textarea { height: 70px; padding: 10px; resize: none; }
+
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
     </style>
 </head>
-<body class="dark-mode">
+<body>
 
-    <div id="login-screen" class="modal">
-        <div class="modal-content">
-            <h2 style="text-align:center; margin-bottom:20px; color:var(--primary)">Acceso Reparaciones</h2>
-            <input id="login-user" placeholder="Usuario">
-            <input id="login-pass" type="password" placeholder="Contraseña">
-            <button id="btn-login" class="btn primary" style="width:100%">ENTRAR</button>
-        </div>
-    </div>
-
-    <div id="main-screen" class="wrap hidden">
+    <div id="main-screen" class="wrap">
         <div class="main-header">
             <div class="grid-btns">
                 <button id="btn-theme" class="btn ghost">TEMA</button>
                 <button id="btn-export" class="btn ghost">RESPALDO</button>
-                <button id="btn-logout" class="btn danger">SALIR</button>
+                <button onclick="location.reload()" class="btn danger">CERRAR</button>
             </div>
             <input id="search-input" placeholder="Buscar por Unidad o Apellido...">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button id="btn-search" class="btn primary">BUSCAR UNIDAD</button>
-                <button id="btn-clear" class="btn ghost">REINICIAR VISTA</button>
+                <button id="btn-search" class="btn primary">BUSCAR</button>
+                <button id="btn-clear" class="btn ghost">LIMPIAR</button>
             </div>
         </div>
 
@@ -56,43 +59,44 @@
 
     <div id="modal-view" class="modal hidden">
         <div class="modal-content">
-            <h3 id="view-title" style="text-align:center; color:var(--primary)">Historial</h3>
-            <div id="view-reps-container" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div>
-            <button onclick="cerrarModales()" class="btn ghost" style="width:100%; margin-top:15px">CERRAR</button>
+            <h3 id="view-title" style="color:var(--primary); margin-bottom:10px;"></h3>
+            <div id="view-reps-container" class="ficha-lectura"></div>
+            <button onclick="cerrarModales()" class="btn ghost" style="width:100%; margin-top:20px">VOLVER</button>
         </div>
     </div>
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
             <h3 id="edit-title" style="text-align:center; margin-bottom:15px">Nueva Reparación</h3>
-            <textarea id="r-desc" placeholder="Descripción técnica..."></textarea>
-            <input id="r-ejecutor" placeholder="Técnico / Empresa">
+            <textarea id="r-desc" placeholder="Descripción técnica del trabajo..."></textarea>
+            <input id="r-ejecutor" placeholder="Quién lo realizó">
             <select id="r-estado">
-                <option value="Pendiente">Pendiente</option>
-                <option value="Terminado">Terminado</option>
+                <option value="Pendiente">Estado: Pendiente</option>
+                <option value="Terminado">Estado: Terminado</option>
             </select>
-            <input id="r-garantia" type="number" placeholder="Meses de Garantía">
+            <input id="r-garantia" type="number" placeholder="Garantía (Meses)">
             <select id="r-resp">
                 <option value="Consorcio">Gasto: Consorcio</option>
                 <option value="Particular">Gasto: Particular</option>
             </select>
+            <textarea id="r-obs" placeholder="Observaciones adicionales..."></textarea>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
                 <button id="btn-save-rep" class="btn primary">GUARDAR</button>
-                <button onclick="cerrarModales()" class="btn danger">CANCELAR</button>
+                <button onclick="cerrarModales()" class="btn danger">DESCARTAR</button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, doc, orderBy, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, getDocs, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto", storageBucket: "gestionuf-remoto.firebasestorage.app", messagingSenderId: "724452752860", appId: "1:724452752860:web:4d25585addcdcbd146e319" };
         const app = initializeApp(firebaseConfig); const db = getFirestore(app);
         
-        let departamentos = [], currentUFId = null;
+        let departamentosGlobal = [], currentUFId = null;
 
-        // --- RENDERIZADO ---
+        // RENDERIZADO CORREGIDO: Usamos el ID de Firebase directamente
         function render(data) {
             const list = document.getElementById("list");
             list.innerHTML = "";
@@ -103,43 +107,47 @@
                     <div style="display:flex; justify-content:space-between; align-items:center">
                         <div><b>UF: ${d.UF}</b><small>${d.Propietario || 'S/D'}</small></div>
                         <div style="display:flex; gap:20px; font-size:20px">
-                            <i class="fas fa-tools" title="Ver Historial" onclick="window.verHistorial('${d.id}', '${d.UF}')"></i>
-                            <i class="fas fa-edit" style="color:var(--primary)" title="Agregar Reparación" onclick="window.nuevaReparacion('${d.id}', '${d.UF}')"></i>
+                            <i class="fas fa-eye" onclick="window.verHistorial('${d.id}', '${d.UF}')"></i>
+                            <i class="fas fa-edit" style="color:var(--primary)" onclick="window.nuevaReparacion('${d.id}', '${d.UF}')"></i>
                         </div>
                     </div>`;
                 list.appendChild(div);
             });
         }
 
-        // --- MODO LECTURA (HERRAMIENTAS) ---
-        window.verHistorial = async (id, uf) => {
-            document.getElementById("view-title").innerText = `Historial UF: ${uf}`;
+        // MODO LECTURA: Estilo Ficha Técnica (Sin botones de llamada)
+        window.verHistorial = async (docId, uf) => {
+            document.getElementById("view-title").innerText = `UF: ${uf}`;
             const container = document.getElementById("view-reps-container");
-            container.innerHTML = "Cargando...";
+            container.innerHTML = "Buscando registros...";
             document.getElementById("modal-view").classList.remove("hidden");
 
-            const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
+            const q = query(collection(db, "reparaciones"), where("id_uf", "==", docId));
             const snap = await getDocs(q);
-            container.innerHTML = snap.empty ? "<p>No hay reparaciones registradas.</p>" : "";
-            snap.forEach(doc => {
-                const r = doc.data();
+            container.innerHTML = snap.empty ? "<p>No hay reparaciones en esta unidad.</p>" : "";
+            
+            snap.forEach(docSnap => {
+                const r = docSnap.data();
                 container.innerHTML += `
-                    <div class="rep-card" style="border-left-color: ${r.estado === 'Terminado' ? 'var(--success)' : 'var(--danger)'}">
-                        <b>${r.fecha} - ${r.estado}</b><br>
-                        ${r.descripcion}<br>
-                        <small>Por: ${r.ejecutor} | Garantía: ${r.garantia}m</small>
+                    <div class="rep-entry" style="border-left-color: ${r.estado === 'Terminado' ? 'var(--success)' : 'var(--danger)'}">
+                        <span class="ficha-label">TRABAJO (${r.fecha}):</span> ${r.descripcion}
+                        <span class="ficha-label">REALIZADO POR:</span> ${r.ejecutor}
+                        <span class="ficha-label">GARANTÍA / RESPONSABLE:</span> ${r.garantia} Meses | ${r.responsable}
+                        <span class="ficha-label">OBSERVACIONES:</span> ${r.observaciones || 'Sin observaciones'}
                     </div>`;
             });
         };
 
-        // --- MODO INGRESO (EDITAR) ---
-        window.nuevaReparacion = (id, uf) => {
-            currentUFId = id;
+        // MODO EDICIÓN: Corregido para usar el ID de búsqueda
+        window.nuevaReparacion = (docId, uf) => {
+            currentUFId = docId;
             document.getElementById("edit-title").innerText = `Nueva Reparación UF: ${uf}`;
+            document.querySelectorAll("#modal-edit input, #modal-edit textarea").forEach(i => i.value = "");
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
         document.getElementById("btn-save-rep").onclick = async () => {
+            if(!document.getElementById("r-desc").value) return alert("Debe describir el trabajo");
             const r = {
                 id_uf: currentUFId,
                 descripcion: document.getElementById("r-desc").value,
@@ -147,44 +155,30 @@
                 estado: document.getElementById("r-estado").value,
                 garantia: document.getElementById("r-garantia").value,
                 responsable: document.getElementById("r-resp").value,
+                observaciones: document.getElementById("r-obs").value,
                 fecha: new Date().toLocaleDateString()
             };
-            if(!r.descripcion) return alert("Ingrese descripción");
             await addDoc(collection(db, "reparaciones"), r);
             cerrarModales();
-            alert("Registro guardado.");
+            alert("Guardado exitosamente");
         };
 
-        window.cerrarModales = () => {
-            document.querySelectorAll(".modal").forEach(m => m.id !== "login-screen" && m.classList.add("hidden"));
-        };
+        window.cerrarModales = () => { document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden")); };
 
-        // --- LOGIN Y SYNC ---
-        document.getElementById("btn-login").onclick = async () => {
-            const u = document.getElementById("login-user").value;
-            const p = document.getElementById("login-pass").value;
-            const q = query(collection(db, "usuarios"), where("usuario", "==", u), where("password", "==", p));
-            const snap = await getDocs(q);
-            if (!snap.empty) { localStorage.setItem("uf_auth", "true"); location.reload(); }
-            else alert("Error");
-        };
+        // SYNC INICIAL
+        onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
+            departamentosGlobal = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            render(departamentosGlobal);
+        });
 
-        if(localStorage.getItem("uf_auth") === "true") {
-            document.getElementById("login-screen").classList.add("hidden");
-            document.getElementById("main-screen").classList.remove("hidden");
-            onSnapshot(query(collection(db, "departamentos"), orderBy("UF", "asc")), (snap) => {
-                departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                render(departamentos);
-            });
-        }
-
+        // BÚSQUEDA CORREGIDA
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
-            render(departamentos.filter(d => d.UF.toLowerCase().includes(v) || (d.Propietario||"").toLowerCase().includes(v)));
+            const filtrados = departamentosGlobal.filter(d => d.UF.toLowerCase().includes(v) || (d.Propietario||"").toLowerCase().includes(v));
+            render(filtrados);
         };
-        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
-        document.getElementById("btn-logout").onclick = () => { localStorage.clear(); location.reload(); };
-        document.getElementById("btn-theme").onclick = () => document.body.classList.toggle("dark-mode");
+        
+        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentosGlobal); };
     </script>
 </body>
 </html>
