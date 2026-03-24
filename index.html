@@ -2,16 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover">
     <title>Gestión Reparaciones Pro</title>
     
     <meta name="theme-color" content="#0b141a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <link rel="icon" type="image/png" href="icono.png">
     <link rel="apple-touch-icon" href="icono.png">
 
-    <link rel="manifest" href='data:application/json,{"short_name":"Reparaciones","name":"Gestión Reparaciones Pro","start_url":"./index.html","display":"standalone","theme_color":"#0b141a","background_color":"#0b141a","icons":[{"src":"icono.png","sizes":"192x192","type":"image/png"},{"src":"icono.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/json,{"short_name":"Reparaciones","name":"Gestión Reparaciones Pro","start_url":"index.html","display":"standalone","orientation":"portrait","theme_color":"#0b141a","background_color":"#0b141a","icons":[{"src":"icono.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icono.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}'>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -19,16 +21,14 @@
             --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; 
             --text: #e9edef; --border: #222d34; --success: #22c55e; --warning: #f59e0b;
         }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; scroll-behavior: smooth; }
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 160px; padding-bottom: 80px; }
         .hidden { display: none !important; }
         
-        /* Header */
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .search-box { display: flex; gap: 8px; margin-top: 10px; }
         
-        /* Botón Cohete */
         #btn-rocket {
             position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
             background: var(--primary); color: white; border-radius: 50%; border: none;
@@ -36,21 +36,18 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center;
         }
 
-        /* Inputs y Botones */
-        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
+        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; font-size: 16px; }
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
         .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
 
-        /* Historial */
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.9em; border-left: 5px solid #ccc; }
         .st-pendiente { border-left-color: var(--danger); background: rgba(225,29,72,0.1); }
         .st-en-proceso { border-left-color: var(--warning); background: rgba(245,158,11,0.1); }
         .st-terminado { border-left-color: var(--success); background: rgba(34,197,94,0.1); }
         
-        /* Modal */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); }
     </style>
@@ -62,7 +59,7 @@
     <div class="wrap">
         <header class="main-header">
             <h2 style="display:flex; justify-content:space-between; align-items:center">
-                Gestión Reparaciones <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
+                Reparaciones <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
             </h2>
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="Buscar UF o Propietario...">
@@ -70,7 +67,7 @@
                 <button class="btn btn-danger" id="btn-clear"><i class="fas fa-times"></i></button>
             </div>
         </header>
-        <div id="listado">Cargando unidades...</div>
+        <div id="listado">Cargando...</div>
     </div>
 
     <div id="modal-edit" class="modal hidden">
@@ -105,15 +102,14 @@
     </div>
 
     <script type="module">
-        // --- REGISTRO DEL SERVICE WORKER (Unificado) ---
+        // --- Registro SW con manejo de errores ---
         if ('serviceWorker' in navigator) {
-            const swCode = "self.addEventListener('fetch', function(e){});";
+            const swCode = "self.addEventListener('fetch', function(event) { event.respondWith(fetch(event.request)); });";
             const swBlob = new Blob([swCode], {type: 'application/javascript'});
             const swUrl = URL.createObjectURL(swBlob);
-            navigator.serviceWorker.register(swUrl).catch(err => console.log("SW Error", err));
+            navigator.serviceWorker.register(swUrl).then(() => console.log("PWA Ready")).catch(err => console.log("SW Error", err));
         }
 
-        // --- LÓGICA DE FIREBASE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, getDoc, query, where, updateDoc, doc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -134,8 +130,7 @@
         let currentRepDocId = null;
 
         window.onscroll = () => {
-            const btn = document.getElementById("btn-rocket");
-            btn.style.display = window.scrollY > 300 ? "flex" : "none";
+            document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none";
         };
 
         window.loadData = async () => {
@@ -160,8 +155,8 @@
                                 <p><i class="fas fa-user"></i> ${d.Propietario || '---'}</p>
                             </div>
                             <div style="display:flex; gap:8px">
-                                <button title="Nuevo" class="btn btn-success" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button title="Gestionar" class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Gestionar</button>
+                                <button class="btn btn-success" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i></button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -238,7 +233,6 @@
             }
         };
 
-        // Buscador
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
             render(departamentos.filter(d => d.UF.toString().toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
