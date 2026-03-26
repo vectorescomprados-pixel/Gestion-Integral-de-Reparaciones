@@ -10,7 +10,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icono.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -23,12 +22,10 @@
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 170px; padding-bottom: 80px; }
         .hidden { display: none !important; }
         
-        /* Header Protegido */
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
-        .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .search-box { display: flex; gap: 8px; }
         
-        /* Botón Cohete */
         #btn-rocket {
             position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
             background: var(--primary); color: white; border-radius: 50%; border: none;
@@ -36,23 +33,22 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center;
         }
 
-        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
+        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; font-size: 16px; }
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
         
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
-        .btn-home { background: #374151; color: white; text-decoration: none; font-size: 0.9em; }
+        .btn-back { background: #263238; color: #fff; border: 1px solid #37474f; }
 
-        /* Historial */
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.9em; border-left: 5px solid #ccc; }
         .st-pendiente { border-left-color: var(--danger); background: rgba(225,29,72,0.1); }
         .st-en-proceso { border-left-color: var(--warning); background: rgba(245,158,11,0.1); }
         .st-terminado { border-left-color: var(--success); background: rgba(34,197,94,0.1); }
         
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-        .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); }
+        .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); max-height: 90vh; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -62,12 +58,14 @@
     <div class="wrap">
         <header class="main-header">
             <div class="nav-top">
-                <a href="hub.html" class="btn btn-home"><i class="fas fa-home"></i> Volver</a>
-                <h2 style="font-size: 1.2em;">Reparaciones</h2>
+                <button class="btn btn-back" onclick="window.location.href='index.html'">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+                <h2 style="font-size: 1.1em; color: var(--primary);">Reparaciones</h2>
                 <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
             </div>
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="Buscar UF o Propietario...">
+                <input type="text" id="search-input" placeholder="Buscar UF o Nombre...">
                 <button class="btn btn-primary" id="btn-search"><i class="fas fa-search"></i></button>
                 <button class="btn btn-danger" id="btn-clear"><i class="fas fa-times"></i></button>
             </div>
@@ -79,9 +77,9 @@
         <div class="modal-content">
             <h3 id="m-title" style="margin-bottom:15px; color:var(--primary)">Trabajo</h3>
             <label>Descripción:</label>
-            <textarea id="r-descripcion" rows="3"></textarea>
-            <label>Técnico:</label>
-            <input type="text" id="r-ejecutor">
+            <textarea id="r-descripcion" rows="3" placeholder="Detalle del problema..."></textarea>
+            <label>Técnico / Ejecutor:</label>
+            <input type="text" id="r-ejecutor" placeholder="Nombre del profesional">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
                 <div>
                     <label>Estado:</label>
@@ -134,7 +132,7 @@
 
         window.loadData = async () => {
             const list = document.getElementById("listado");
-            list.innerHTML = "<p style='text-align:center'>Sincronizando con la nube...</p>";
+            list.innerHTML = "<p style='text-align:center; padding:20px'>Cargando base de datos...</p>";
             try {
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -144,28 +142,28 @@
 
         function render(data) {
             const list = document.getElementById("listado");
-            list.innerHTML = data.length ? "" : "No hay resultados";
+            list.innerHTML = data.length ? "" : "<p style='text-align:center'>No se encontraron unidades.</p>";
             data.forEach(d => {
                 list.innerHTML += `
                     <div class="card">
                         <div style="display:flex; justify-content:space-between; align-items:start">
                             <div>
                                 <h3 style="color:var(--primary)">UF ${d.UF}</h3>
-                                <p><i class="fas fa-user"></i> ${d.Propietario || '---'}</p>
+                                <p style="font-size:0.9em; color:#8696a0"><i class="fas fa-user"></i> ${d.Propietario || 'Sin nombre'}</p>
                             </div>
                             <div style="display:flex; gap:8px">
-                                <button title="Nuevo" class="btn btn-success" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button title="Gestionar" class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Gestionar</button>
+                                <button class="btn btn-success" style="padding:8px 12px" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Trabajos</button>
                             </div>
                         </div>
-                        <div id="det-${d.id}" class="hidden" style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px"></div>
+                        <div id="det-${d.id}" class="hidden" style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px"></div>
                     </div>`;
             });
         }
 
         window.openNew = (id, uf) => {
             currentUFId = id; currentRepDocId = null;
-            document.getElementById("m-title").innerText = "Nueva Reparación UF " + uf;
+            document.getElementById("m-title").innerText = "Nueva Tarea UF " + uf;
             document.getElementById("r-descripcion").value = "";
             document.getElementById("r-ejecutor").value = "";
             document.getElementById("r-estado").value = "Pendiente";
@@ -173,14 +171,11 @@
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
-        // BLINDAJE ANTI-ERROR: Función de edición mejorada
         window.editSpecific = async (docId, uf) => {
             currentRepDocId = docId;
-            document.getElementById("m-title").innerText = "Editando - UF " + uf;
+            document.getElementById("m-title").innerText = "Modificar - UF " + uf;
             try {
-                const docRef = doc(db, "reparaciones", docId);
-                const docSnap = await getDoc(docRef);
-                
+                const docSnap = await getDoc(doc(db, "reparaciones", docId));
                 if (docSnap.exists()) {
                     const r = docSnap.data();
                     currentUFId = r.id_uf;
@@ -190,23 +185,21 @@
                     document.getElementById("r-responsable").value = r.responsable || "Consorcio";
                     document.getElementById("modal-edit").classList.remove("hidden");
                 }
-            } catch (e) { 
-                console.error("Error al recuperar:", e);
-                alert("No se pudo cargar el registro para editar.");
-            }
+            } catch (e) { alert("Error al cargar datos."); }
         };
 
         window.saveRep = async () => {
+            const desc = document.getElementById("r-descripcion").value.trim();
+            if(!desc) { alert("Por favor, ingresa una descripción."); return; }
+
             const data = {
                 id_uf: currentUFId,
-                descripcion: document.getElementById("r-descripcion").value.trim(),
+                descripcion: desc,
                 ejecutor: document.getElementById("r-ejecutor").value.trim(),
                 estado: document.getElementById("r-estado").value,
                 responsable: document.getElementById("r-responsable").value,
                 fecha: new Date().toLocaleDateString()
             };
-
-            if(!data.descripcion) return alert("Escribe una descripción");
 
             try {
                 if (currentRepDocId) {
@@ -216,38 +209,38 @@
                 }
                 window.closeModal();
                 window.loadData();
-                alert("Guardado con éxito");
-            } catch (e) { alert("Error al guardar"); }
+            } catch (e) { alert("Error al guardar en la nube."); }
         };
 
         document.getElementById("btn-guardar-principal").onclick = window.saveRep;
-
         window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
 
         window.verHist = async (id, uf) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "<small>Cargando historial...</small>";
+                el.innerHTML = "<p style='font-size:0.8em; color:#aaa'>Buscando trabajos...</p>";
                 try {
                     const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
                     const snap = await getDocs(q);
-                    el.innerHTML = snap.empty ? "Sin registros previos." : "";
+                    el.innerHTML = snap.empty ? "<p style='font-size:0.8em; color:var(--warning)'>No hay reparaciones registradas.</p>" : "";
                     snap.forEach(ds => {
                         const r = ds.data();
                         const cl = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
                         el.innerHTML += `
                             <div class="hist-item ${cl}">
                                 <div style="display:flex; justify-content:space-between; align-items:center">
-                                    <div style="flex:1">
-                                        <b>${r.fecha}:</b> ${r.descripcion}<br>
-                                        <small>Resp: ${r.responsable || '---'}</small>
+                                    <div style="flex:1; padding-right:10px">
+                                        <b>${r.fecha}</b> - ${r.descripcion}<br>
+                                        <small style="color:#aaa">Resp: ${r.responsable || 'Consorcio'}</small>
                                     </div>
-                                    <button class="btn btn-primary" style="padding:5px 8px" onclick="window.editSpecific('${ds.id}', '${uf}')"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-primary" style="padding:6px 10px; font-size:0.8em" onclick="window.editSpecific('${ds.id}', '${uf}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                 </div>
                             </div>`;
                     });
-                } catch (e) { el.innerHTML = "Error al leer datos"; }
+                } catch (e) { el.innerHTML = "Error al conectar."; }
             }
         };
 
