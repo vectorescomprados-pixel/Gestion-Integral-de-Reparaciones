@@ -10,7 +10,6 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icono.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -18,30 +17,11 @@
             --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; 
             --text: #e9edef; --border: #222d34; --success: #22c55e; --warning: #f59e0b;
         }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; scroll-behavior: smooth; }
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 160px; padding-bottom: 80px; }
         .hidden { display: none !important; }
         
-        .btn-home {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 9999999;
-            background: rgba(37, 99, 235, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-        }
-
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .search-box { display: flex; gap: 8px; margin-top: 10px; }
         
@@ -52,7 +32,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center;
         }
 
-        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; font-size: 16px; }
+        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
         .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
         .btn-primary { background: var(--primary); color: #fff; }
@@ -70,15 +50,11 @@
 </head>
 <body>
 
-    <a href="https://vectorescomprados-pixel.github.io/Gestion-de-Consorcios/" class="btn-home">
-        <i class="fas fa-home"></i>
-    </a>
-
     <button id="btn-rocket" onclick="window.scrollTo(0,0)"><i class="fas fa-rocket"></i></button>
 
     <div class="wrap">
         <header class="main-header">
-            <h2 style="display:flex; justify-content:space-between; align-items:center; padding-left: 50px;">
+            <h2 style="display:flex; justify-content:space-between; align-items:center">
                 Reparaciones <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
             </h2>
             <div class="search-box">
@@ -87,7 +63,7 @@
                 <button class="btn btn-danger" id="btn-clear"><i class="fas fa-times"></i></button>
             </div>
         </header>
-        <div id="listado">Cargando...</div>
+        <div id="listado">Cargando unidades...</div>
     </div>
 
     <div id="modal-edit" class="modal hidden">
@@ -111,6 +87,7 @@
                     <select id="r-responsable">
                         <option value="Consorcio">Consorcio</option>
                         <option value="Propietario">Propietario</option>
+                        <option value="Empleado">Empleado</option>
                     </select>
                 </div>
             </div>
@@ -141,17 +118,9 @@
         let currentUFId = null;
         let currentRepDocId = null;
 
-        async function actualizarHub() {
-            try {
-                const snap = await getDocs(collection(db, "reparaciones"));
-                const activas = snap.docs.filter(d => d.data().estado !== "Terminado").length;
-                const ref = doc(db, "resumen_consorcio", "estado_actual");
-                await updateDoc(ref, { reparaciones_activas: activas.toString() });
-            } catch (e) { console.log("Error sincronizando Hub"); }
-        }
-
         window.onscroll = () => {
-            document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none";
+            const btn = document.getElementById("btn-rocket");
+            btn.style.display = window.scrollY > 300 ? "flex" : "none";
         };
 
         window.loadData = async () => {
@@ -161,7 +130,7 @@
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 render(departamentos);
-            } catch (e) { console.error(e); list.innerHTML = "Error de conexión"; }
+            } catch (e) { console.error(e); }
         };
 
         function render(data) {
@@ -177,7 +146,7 @@
                             </div>
                             <div style="display:flex; gap:8px">
                                 <button title="Nuevo" class="btn btn-success" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button title="Gestionar" class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i></button>
+                                <button title="Gestionar" class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Gestionar</button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -191,6 +160,7 @@
             document.getElementById("r-descripcion").value = "";
             document.getElementById("r-ejecutor").value = "";
             document.getElementById("r-estado").value = "Pendiente";
+            document.getElementById("r-responsable").value = "Consorcio";
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
@@ -223,9 +193,6 @@
             try {
                 if (currentRepDocId) await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
                 else await addDoc(collection(db, "reparaciones"), data);
-                
-                await actualizarHub();
-                
                 window.closeModal();
                 window.loadData();
             } catch (e) { alert("Error al guardar"); }
@@ -248,7 +215,10 @@
                         el.innerHTML += `
                             <div class="hist-item ${cl}">
                                 <div style="display:flex; justify-content:space-between">
-                                    <div style="flex:1"><b>${r.fecha}:</b> ${r.descripcion}</div>
+                                    <div style="flex:1">
+                                        <b>${r.fecha}:</b> ${r.descripcion}<br>
+                                        <small>Resp: ${r.responsable || '---'}</small>
+                                    </div>
                                     <button class="btn btn-primary" style="padding:5px 8px" onclick="window.editSpecific('${ds.id}', '${uf}')"><i class="fas fa-edit"></i></button>
                                 </div>
                             </div>`;
@@ -265,15 +235,6 @@
         document.getElementById("btn-refresh").onclick = () => window.loadData();
 
         window.loadData();
-
-        // Registro Service Worker para modo Nativo
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW Reparaciones Activo'))
-                    .catch(e => console.error('Error SW', e));
-            });
-        }
     </script>
 </body>
 </html>
