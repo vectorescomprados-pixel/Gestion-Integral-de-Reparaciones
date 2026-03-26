@@ -10,6 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icono.png">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -19,12 +20,15 @@
         }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; scroll-behavior: smooth; }
-        .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 160px; padding-bottom: 80px; }
+        .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 170px; padding-bottom: 80px; }
         .hidden { display: none !important; }
         
+        /* Header Protegido */
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
-        .search-box { display: flex; gap: 8px; margin-top: 10px; }
+        .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .search-box { display: flex; gap: 8px; }
         
+        /* Botón Cohete */
         #btn-rocket {
             position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
             background: var(--primary); color: white; border-radius: 50%; border: none;
@@ -34,11 +38,14 @@
 
         input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+        
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
+        .btn-home { background: #374151; color: white; text-decoration: none; font-size: 0.9em; }
 
+        /* Historial */
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.9em; border-left: 5px solid #ccc; }
         .st-pendiente { border-left-color: var(--danger); background: rgba(225,29,72,0.1); }
         .st-en-proceso { border-left-color: var(--warning); background: rgba(245,158,11,0.1); }
@@ -54,9 +61,11 @@
 
     <div class="wrap">
         <header class="main-header">
-            <h2 style="display:flex; justify-content:space-between; align-items:center">
-                Reparaciones <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
-            </h2>
+            <div class="nav-top">
+                <a href="hub.html" class="btn btn-home"><i class="fas fa-home"></i> Volver</a>
+                <h2 style="font-size: 1.2em;">Reparaciones</h2>
+                <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
+            </div>
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="Buscar UF o Propietario...">
                 <button class="btn btn-primary" id="btn-search"><i class="fas fa-search"></i></button>
@@ -93,7 +102,7 @@
             </div>
             <div style="display:flex; gap:10px; margin-top:15px">
                 <button class="btn btn-danger" style="flex:1" onclick="window.closeModal()">Cerrar</button>
-                <button class="btn btn-success" style="flex:1" onclick="window.saveRep()">Guardar</button>
+                <button class="btn btn-success" style="flex:1" id="btn-guardar-principal">Guardar</button>
             </div>
         </div>
     </div>
@@ -125,7 +134,7 @@
 
         window.loadData = async () => {
             const list = document.getElementById("listado");
-            list.innerHTML = "Sincronizando...";
+            list.innerHTML = "<p style='text-align:center'>Sincronizando con la nube...</p>";
             try {
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -164,11 +173,14 @@
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
+        // BLINDAJE ANTI-ERROR: Función de edición mejorada
         window.editSpecific = async (docId, uf) => {
             currentRepDocId = docId;
             document.getElementById("m-title").innerText = "Editando - UF " + uf;
             try {
-                const docSnap = await getDoc(doc(db, "reparaciones", docId));
+                const docRef = doc(db, "reparaciones", docId);
+                const docSnap = await getDoc(docRef);
+                
                 if (docSnap.exists()) {
                     const r = docSnap.data();
                     currentUFId = r.id_uf;
@@ -178,25 +190,37 @@
                     document.getElementById("r-responsable").value = r.responsable || "Consorcio";
                     document.getElementById("modal-edit").classList.remove("hidden");
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error("Error al recuperar:", e);
+                alert("No se pudo cargar el registro para editar.");
+            }
         };
 
         window.saveRep = async () => {
             const data = {
                 id_uf: currentUFId,
-                descripcion: document.getElementById("r-descripcion").value,
-                ejecutor: document.getElementById("r-ejecutor").value,
+                descripcion: document.getElementById("r-descripcion").value.trim(),
+                ejecutor: document.getElementById("r-ejecutor").value.trim(),
                 estado: document.getElementById("r-estado").value,
                 responsable: document.getElementById("r-responsable").value,
                 fecha: new Date().toLocaleDateString()
             };
+
+            if(!data.descripcion) return alert("Escribe una descripción");
+
             try {
-                if (currentRepDocId) await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
-                else await addDoc(collection(db, "reparaciones"), data);
+                if (currentRepDocId) {
+                    await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
+                } else {
+                    await addDoc(collection(db, "reparaciones"), data);
+                }
                 window.closeModal();
                 window.loadData();
+                alert("Guardado con éxito");
             } catch (e) { alert("Error al guardar"); }
         };
+
+        document.getElementById("btn-guardar-principal").onclick = window.saveRep;
 
         window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
 
@@ -204,17 +228,17 @@
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "Cargando...";
+                el.innerHTML = "<small>Cargando historial...</small>";
                 try {
                     const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
                     const snap = await getDocs(q);
-                    el.innerHTML = snap.empty ? "Sin registros" : "";
+                    el.innerHTML = snap.empty ? "Sin registros previos." : "";
                     snap.forEach(ds => {
                         const r = ds.data();
                         const cl = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
                         el.innerHTML += `
                             <div class="hist-item ${cl}">
-                                <div style="display:flex; justify-content:space-between">
+                                <div style="display:flex; justify-content:space-between; align-items:center">
                                     <div style="flex:1">
                                         <b>${r.fecha}:</b> ${r.descripcion}<br>
                                         <small>Resp: ${r.responsable || '---'}</small>
@@ -223,7 +247,7 @@
                                 </div>
                             </div>`;
                     });
-                } catch (e) { el.innerHTML = "Error al leer historial"; }
+                } catch (e) { el.innerHTML = "Error al leer datos"; }
             }
         };
 
