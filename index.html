@@ -21,9 +21,29 @@
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; scroll-behavior: smooth; }
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 170px; padding-bottom: 80px; }
         .hidden { display: none !important; }
+
+        /* 🏠 ESTILO EXACTO DEL BOTÓN HOME DE TU INDEX */
+        .btn-home {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 9999999;
+            background: rgba(37, 99, 235, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
         
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
-        .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .nav-top { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; }
         .search-box { display: flex; gap: 8px; }
         
         #btn-rocket {
@@ -40,7 +60,6 @@
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
-        .btn-back { background: #263238; color: #fff; border: 1px solid #37474f; }
 
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.9em; border-left: 5px solid #ccc; }
         .st-pendiente { border-left-color: var(--danger); background: rgba(225,29,72,0.1); }
@@ -53,15 +72,16 @@
 </head>
 <body>
 
+    <a href="https://vectorescomprados-pixel.github.io/Gestion-de-Consorcios/" class="btn-home">
+        <i class="fas fa-home"></i>
+    </a>
+
     <button id="btn-rocket" onclick="window.scrollTo(0,0)"><i class="fas fa-rocket"></i></button>
 
     <div class="wrap">
         <header class="main-header">
             <div class="nav-top">
-                <button class="btn btn-back" onclick="window.location.href='index.html'">
-                    <i class="fas fa-arrow-left"></i> Volver
-                </button>
-                <h2 style="font-size: 1.1em; color: var(--primary);">Reparaciones</h2>
+                <h2 style="font-size: 1.1em; color: var(--primary); margin-right: auto; padding-left: 50px;">Reparaciones</h2>
                 <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
             </div>
             <div class="search-box">
