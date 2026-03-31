@@ -22,29 +22,22 @@
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 170px; padding-bottom: 80px; }
         .hidden { display: none !important; }
 
-        /* 🏠 ESTILO EXACTO DEL BOTÓN HOME DE TU INDEX */
         .btn-home {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 9999999;
-            background: rgba(37, 99, 235, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
+            position: fixed; top: 15px; left: 15px; z-index: 9999999;
+            background: rgba(37, 99, 235, 0.9); color: white; border: none;
+            border-radius: 50%; width: 45px; height: 45px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex;
+            align-items: center; justify-content: center; text-decoration: none;
         }
         
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .nav-top { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; }
-        .search-box { display: flex; gap: 8px; }
+        
+        /* 🔍 BUSCADOR OPTIMIZADO */
+        .search-box { display: flex; gap: 5px; align-items: center; }
+        .search-box input { flex: 1; margin-bottom: 0; background: #1d2a33; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; }
+        .btn-search-trigger { background: var(--primary); color: white; border: none; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
+        .btn-clear-trigger { background: var(--danger); color: white; border: none; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
         
         #btn-rocket {
             position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
@@ -76,7 +69,7 @@
         <i class="fas fa-home"></i>
     </a>
 
-    <button id="btn-rocket" onclick="window.scrollTo(0,0)"><i class="fas fa-rocket"></i></button>
+    <button id="btn-rocket" onclick="window.scrollTo({top:0, behavior:'smooth'})"><i class="fas fa-rocket"></i></button>
 
     <div class="wrap">
         <header class="main-header">
@@ -84,10 +77,11 @@
                 <h2 style="font-size: 1.1em; color: var(--primary); margin-right: auto; padding-left: 50px;">Reparaciones</h2>
                 <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
             </div>
+            
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="Buscar UF o Nombre...">
-                <button class="btn btn-primary" id="btn-search"><i class="fas fa-search"></i></button>
-                <button class="btn btn-danger" id="btn-clear"><i class="fas fa-times"></i></button>
+                <input type="text" id="search-input" placeholder="UF, Propietario o Inquilino..." autocomplete="off">
+                <button class="btn-clear-trigger" id="btn-clear"><i class="fas fa-times"></i></button>
+                <button class="btn-search-trigger" id="btn-do-search"><i class="fas fa-search"></i></button>
             </div>
         </header>
         <div id="listado">Cargando unidades...</div>
@@ -127,15 +121,13 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, getDoc, query, where, updateDoc, doc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, getDoc, query, where, updateDoc, doc, addDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        const CODIGO_MAESTRO = "4750"; 
         const firebaseConfig = {
             apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo",
             authDomain: "gestionuf-remoto.firebaseapp.com",
-            projectId: "gestionuf-remoto",
-            storageBucket: "gestionuf-remoto.appspot.com",
-            messagingSenderId: "724452752860",
-            appId: "1:724452752860:web:4d25585addcdcbd146e319"
+            projectId: "gestionuf-remoto"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -162,18 +154,19 @@
 
         function render(data) {
             const list = document.getElementById("listado");
-            list.innerHTML = data.length ? "" : "<p style='text-align:center'>No se encontraron unidades.</p>";
+            list.innerHTML = data.length ? "" : "<p style='text-align:center; padding:20px'>No se encontraron coincidencias.</p>";
             data.forEach(d => {
                 list.innerHTML += `
                     <div class="card">
                         <div style="display:flex; justify-content:space-between; align-items:start">
                             <div>
                                 <h3 style="color:var(--primary)">UF ${d.UF}</h3>
-                                <p style="font-size:0.9em; color:#8696a0"><i class="fas fa-user"></i> ${d.Propietario || 'Sin nombre'}</p>
+                                <p style="font-size:0.85em; color:#8696a0; margin-bottom:2px"><b>P:</b> ${d.Propietario || 'S/D'}</p>
+                                <p style="font-size:0.85em; color:#8696a0"><b>I:</b> ${d.Inquilino || 'S/D'}</p>
                             </div>
                             <div style="display:flex; gap:8px">
                                 <button class="btn btn-success" style="padding:8px 12px" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Trabajos</button>
+                                <button class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i></button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -181,6 +174,43 @@
             });
         }
 
+        /* 🚀 FUNCIÓN DE BÚSQUEDA MANUAL */
+        const ejecutarBusqueda = () => {
+            const v = document.getElementById('search-input').value.toLowerCase().trim();
+            if(!v) { render(departamentos); return; }
+            
+            const filtered = departamentos.filter(d => {
+                const uf = String(d.UF || "").toLowerCase();
+                const prop = String(d.Propietario || "").toLowerCase();
+                const inq = String(d.Inquilino || "").toLowerCase();
+                return uf.includes(v) || prop.includes(v) || inq.includes(v);
+            });
+            render(filtered);
+            window.scrollTo(0,0);
+        };
+
+        document.getElementById('btn-do-search').onclick = ejecutarBusqueda;
+        
+        document.getElementById('search-input').onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                ejecutarBusqueda();
+                document.getElementById('search-input').blur(); 
+            }
+        };
+
+        /* ❌ BOTÓN LIMPIAR (X ROJA) */
+        document.getElementById("btn-clear").onclick = () => { 
+            document.getElementById("search-input").value = ""; 
+            render(departamentos); 
+        };
+
+        /* 🔄 BOTÓN ACTUALIZAR (Refresca y limpia búsqueda) */
+        document.getElementById("btn-refresh").onclick = () => {
+            document.getElementById("search-input").value = ""; // Limpia el campo
+            window.loadData(); // Carga todo de nuevo
+        };
+
+        /* --- ACCIONES DE FIREBASE --- */
         window.openNew = (id, uf) => {
             currentUFId = id; currentRepDocId = null;
             document.getElementById("m-title").innerText = "Nueva Tarea UF " + uf;
@@ -208,9 +238,22 @@
             } catch (e) { alert("Error al cargar datos."); }
         };
 
+        window.deleteRep = async (docId, ufId) => {
+            if(!confirm("¿Eliminar este registro?")) return;
+            const pass = prompt("Código Maestro:");
+            if(pass !== CODIGO_MAESTRO) { alert("Incorrecto."); return; }
+            try {
+                await deleteDoc(doc(db, "reparaciones", docId));
+                alert("Eliminado.");
+                window.loadData();
+            } catch (e) { alert("Error."); }
+        };
+
         window.saveRep = async () => {
             const desc = document.getElementById("r-descripcion").value.trim();
-            if(!desc) { alert("Por favor, ingresa una descripción."); return; }
+            if(!desc) { alert("Ingrese descripción."); return; }
+            const pass = prompt("Código Maestro:");
+            if(pass !== CODIGO_MAESTRO) { alert("Incorrecto."); return; }
 
             const data = {
                 id_uf: currentUFId,
@@ -229,7 +272,7 @@
                 }
                 window.closeModal();
                 window.loadData();
-            } catch (e) { alert("Error al guardar en la nube."); }
+            } catch (e) { alert("Error."); }
         };
 
         document.getElementById("btn-guardar-principal").onclick = window.saveRep;
@@ -239,11 +282,11 @@
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "<p style='font-size:0.8em; color:#aaa'>Buscando trabajos...</p>";
+                el.innerHTML = "<p style='font-size:0.8em; text-align:center; color:#aaa'>Buscando...</p>";
                 try {
                     const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
                     const snap = await getDocs(q);
-                    el.innerHTML = snap.empty ? "<p style='font-size:0.8em; color:var(--warning)'>No hay reparaciones registradas.</p>" : "";
+                    el.innerHTML = snap.empty ? "<p style='font-size:0.8em; text-align:center; color:var(--warning)'>Sin registros.</p>" : "";
                     snap.forEach(ds => {
                         const r = ds.data();
                         const cl = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
@@ -252,24 +295,18 @@
                                 <div style="display:flex; justify-content:space-between; align-items:center">
                                     <div style="flex:1; padding-right:10px">
                                         <b>${r.fecha}</b> - ${r.descripcion}<br>
-                                        <small style="color:#aaa">Resp: ${r.responsable || 'Consorcio'}</small>
+                                        <small style="color:#aaa">Resp: ${r.responsable} | Téc: ${r.ejecutor || '-'}</small>
                                     </div>
-                                    <button class="btn btn-primary" style="padding:6px 10px; font-size:0.8em" onclick="window.editSpecific('${ds.id}', '${uf}')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                    <div style="display:flex; gap:5px">
+                                        <button class="btn btn-primary" style="padding:6px 10px; font-size:0.8em" onclick="window.editSpecific('${ds.id}', '${uf}')"><i class="fas fa-edit"></i></button>
+                                        <button class="btn btn-danger" style="padding:6px 10px; font-size:0.8em" onclick="window.deleteRep('${ds.id}', '${id}')"><i class="fas fa-trash"></i></button>
+                                    </div>
                                 </div>
                             </div>`;
                     });
-                } catch (e) { el.innerHTML = "Error al conectar."; }
+                } catch (e) { el.innerHTML = "Error."; }
             }
         };
-
-        document.getElementById("btn-search").onclick = () => {
-            const v = document.getElementById("search-input").value.toLowerCase();
-            render(departamentos.filter(d => d.UF.toString().toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
-        };
-        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; render(departamentos); };
-        document.getElementById("btn-refresh").onclick = () => window.loadData();
 
         window.loadData();
     </script>
