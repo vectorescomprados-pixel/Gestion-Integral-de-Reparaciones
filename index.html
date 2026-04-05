@@ -37,14 +37,12 @@
         .btn-stat-header { background: rgba(37, 99, 235, 0.1); border: 1px solid var(--primary); color: white; border-radius: 8px; padding: 0 12px; height: 45px; display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; }
 
         .search-box { display: flex; gap: 5px; align-items: center; }
-        .search-box input { flex: 1; margin-bottom: 0; background: #1d2a33; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; }
+        .search-box input { flex: 1; margin-bottom: 0; background: #1d2a33; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; font-size: 16px; }
         .btn-search-trigger { background: var(--primary); color: white; border: none; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
         .btn-clear-trigger { background: var(--danger); color: white; border: none; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
         
-        /* BOTÓN COHETE RESTAURADO */
         #btn-rocket { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 1.5em; cursor: pointer; display: none; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center; }
 
-        /* TARJETAS CON SEMÁFORO */
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); border-left: 6px solid transparent; }
         .status-pendiente { border-left-color: var(--danger) !important; }
         .status-proceso { border-left-color: var(--warning) !important; }
@@ -63,8 +61,6 @@
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); max-height: 90vh; overflow-y: auto; }
 
-        /* FICHA HUB MODAL GLOBAL */
-        .list-scroll { max-height: 400px; overflow-y: auto; margin: 15px 0; padding-right: 5px; }
         .ficha-hub { background: #1c272e; border: 1px solid #2a3942; border-radius: 12px; padding: 15px; margin-bottom: 10px; text-align: left; }
         .campo-hub { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 3px; }
         .lbl-hub { color: var(--label); font-size: 10px; text-transform: uppercase; font-weight: 800; min-width: 45px; }
@@ -89,7 +85,7 @@
             </div>
             
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="UF, Propietario o Inquilino..." autocomplete="off">
+                <input type="text" id="search-input" placeholder="UF, Prop o Estado (Pen, Proc)..." autocomplete="off">
                 <button class="btn-clear-trigger" id="btn-clear"><i class="fas fa-times"></i></button>
                 <button class="btn-search-trigger" id="btn-do-search"><i class="fas fa-search"></i></button>
             </div>
@@ -111,7 +107,7 @@
     <div id="modal-global" class="modal hidden">
         <div class="modal-content">
             <h3 style="color:var(--primary); text-align:center; margin-bottom:15px">Obras Activas</h3>
-            <div id="lista-global" class="list-scroll"></div>
+            <div id="lista-global" style="max-height: 400px; overflow-y: auto; margin: 15px 0;"></div>
             <button class="btn btn-danger" style="width:100%" onclick="document.getElementById('modal-global').classList.add('hidden')">Cerrar</button>
         </div>
     </div>
@@ -143,7 +139,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, orderBy, onSnapshot, query, where, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, orderBy, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const CODIGO_MAESTRO = "4750"; 
         const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto" };
@@ -155,13 +151,12 @@
         let mapaDeptos = {};
         let currentUFId, currentRepDocId, pendingAction;
 
-        // Lógica del botón cohete
         window.onscroll = () => { document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none"; };
 
         onSnapshot(collection(db, "reparaciones"), (snap) => {
             reparacionesGlobales = snap.docs.map(d => ({id: d.id, ...d.data()}));
             document.getElementById("total-activas").innerText = reparacionesGlobales.filter(r => ["Pendiente", "En Proceso"].includes(r.estado)).length;
-            ejecutarBusqueda(); 
+            // No ejecutamos búsqueda automática aquí para evitar lentitud
         });
 
         window.loadData = async () => {
@@ -202,18 +197,34 @@
             });
         }
 
+        // Lógica de búsqueda manual con la Lupa
         const ejecutarBusqueda = () => {
             const v = document.getElementById('search-input').value.toLowerCase().trim();
             if(!v) { render(departamentos); return; }
-            render(departamentos.filter(d => 
-                String(d.UF).includes(v) || 
-                String(d.Propietario || "").toLowerCase().includes(v) || 
-                String(d.Inquilino || "").toLowerCase().includes(v)
-            ));
+            
+            const filtrados = departamentos.filter(d => {
+                const cumpleTexto = String(d.UF).includes(v) || 
+                                   String(d.Propietario || "").toLowerCase().includes(v) || 
+                                   String(d.Inquilino || "").toLowerCase().includes(v);
+                
+                const reps = reparacionesGlobales.filter(r => r.id_uf === d.id);
+                const cumpleEstado = (v === "pen" || v === "pendiente") ? reps.some(r => r.estado === "Pendiente") :
+                                     (v === "proc" || v === "proceso") ? reps.some(r => r.estado === "En Proceso") : false;
+
+                return cumpleTexto || cumpleEstado;
+            });
+            render(filtrados);
+            window.scrollTo(0,0);
         };
 
+        // Eventos de búsqueda (Manual)
         document.getElementById('btn-do-search').onclick = ejecutarBusqueda;
-        document.getElementById('search-input').onkeypress = (e) => { if (e.key === 'Enter') ejecutarBusqueda(); };
+        document.getElementById('search-input').onkeypress = (e) => { 
+            if (e.key === 'Enter') {
+                ejecutarBusqueda();
+                document.getElementById('search-input').blur(); // Oculta el teclado
+            }
+        };
 
         window.openGlobal = () => {
             const list = document.getElementById("lista-global");
@@ -257,10 +268,15 @@
                 if (currentRepDocId) await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
                 else await addDoc(collection(db, "reparaciones"), data);
                 window.closeModal();
+                ejecutarBusqueda(); // Refresca la vista actual tras guardar
             });
         };
 
-        window.deleteRep = (docId) => solicitarSeguridad(async () => { await deleteDoc(doc(db, "reparaciones", docId)); });
+        window.deleteRep = (docId) => solicitarSeguridad(async () => { 
+            await deleteDoc(doc(db, "reparaciones", docId)); 
+            ejecutarBusqueda(); 
+        });
+
         window.openNew = (id, uf) => { currentUFId = id; currentRepDocId = null; document.getElementById("m-title").innerText = "Nueva UF " + uf; document.getElementById("r-descripcion").value = ""; document.getElementById("modal-edit").classList.remove("hidden"); };
         window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
 
@@ -281,8 +297,12 @@
             }
         };
 
-        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; ejecutarBusqueda(); };
-        document.getElementById("btn-refresh").onclick = () => loadData();
+        document.getElementById("btn-clear").onclick = () => { 
+            document.getElementById("search-input").value = ""; 
+            render(departamentos); 
+        };
+
+        document.getElementById("btn-refresh").onclick = () => window.loadData();
         window.loadData();
     </script>
 </body>
