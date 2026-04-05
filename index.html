@@ -16,6 +16,7 @@
         :root { 
             --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; 
             --text: #e9edef; --border: #222d34; --success: #22c55e; --warning: #f59e0b;
+            --label: #8696a0;
         }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; scroll-behavior: smooth; }
@@ -31,50 +32,59 @@
         }
         
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
-        .nav-top { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; }
+        .nav-top { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px; gap: 10px; }
         
-        /* 🔍 BUSCADOR OPTIMIZADO */
+        .btn-stat-header { background: rgba(37, 99, 235, 0.1); border: 1px solid var(--primary); color: white; border-radius: 8px; padding: 0 12px; height: 45px; display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; }
+
         .search-box { display: flex; gap: 5px; align-items: center; }
         .search-box input { flex: 1; margin-bottom: 0; background: #1d2a33; border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: #fff; }
         .btn-search-trigger { background: var(--primary); color: white; border: none; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
         .btn-clear-trigger { background: var(--danger); color: white; border: none; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
         
-        #btn-rocket {
-            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
-            background: var(--primary); color: white; border-radius: 50%; border: none;
-            font-size: 1.5em; cursor: pointer; display: none; z-index: 2000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center;
-        }
+        /* BOTÓN COHETE RESTAURADO */
+        #btn-rocket { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 1.5em; cursor: pointer; display: none; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center; }
 
-        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; font-size: 16px; }
-        .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
-        
+        /* TARJETAS CON SEMÁFORO */
+        .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); border-left: 6px solid transparent; }
+        .status-pendiente { border-left-color: var(--danger) !important; }
+        .status-proceso { border-left-color: var(--warning) !important; }
+        .status-terminado { border-left-color: var(--success) !important; }
+
         .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
 
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.9em; border-left: 5px solid #ccc; }
-        .st-pendiente { border-left-color: var(--danger); background: rgba(225,29,72,0.1); }
-        .st-en-proceso { border-left-color: var(--warning); background: rgba(245,158,11,0.1); }
-        .st-terminado { border-left-color: var(--success); background: rgba(34,197,94,0.1); }
+        .st-pendiente { border-left-color: var(--danger); }
+        .st-en-proceso { border-left-color: var(--warning); }
+        .st-terminado { border-left-color: var(--success); }
         
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); max-height: 90vh; overflow-y: auto; }
+
+        /* FICHA HUB MODAL GLOBAL */
+        .list-scroll { max-height: 400px; overflow-y: auto; margin: 15px 0; padding-right: 5px; }
+        .ficha-hub { background: #1c272e; border: 1px solid #2a3942; border-radius: 12px; padding: 15px; margin-bottom: 10px; text-align: left; }
+        .campo-hub { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 3px; }
+        .lbl-hub { color: var(--label); font-size: 10px; text-transform: uppercase; font-weight: 800; min-width: 45px; }
+        .val-hub { color: #fff; font-size: 13px; font-weight: 600; flex: 1; }
+        .val-tarea { color: var(--warning); font-size: 12px; font-weight: 500; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-    <a href="https://vectorescomprados-pixel.github.io/Gestion-de-Consorcios/" class="btn-home">
-        <i class="fas fa-home"></i>
-    </a>
-
+    <a href="https://vectorescomprados-pixel.github.io/Gestion-de-Consorcios/" class="btn-home"><i class="fas fa-home"></i></a>
     <button id="btn-rocket" onclick="window.scrollTo({top:0, behavior:'smooth'})"><i class="fas fa-rocket"></i></button>
 
     <div class="wrap">
         <header class="main-header">
             <div class="nav-top">
                 <h2 style="font-size: 1.1em; color: var(--primary); margin-right: auto; padding-left: 50px;">Reparaciones</h2>
+                <div class="btn-stat-header" onclick="window.openGlobal()">
+                    <i class="fas fa-tools" style="color:var(--primary)"></i>
+                    <span id="total-activas">0</span>
+                </div>
                 <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
             </div>
             
@@ -87,86 +97,104 @@
         <div id="listado">Cargando unidades...</div>
     </div>
 
+    <div id="modal-seguridad" class="modal hidden">
+        <div class="modal-content" style="text-align:center">
+            <h3>Seguridad Requerida</h3>
+            <input type="password" id="input-maestro" placeholder="••••" inputmode="numeric" style="text-align:center; font-size:24px; width:100%; padding:10px; margin:20px 0; background:#1d2a33; color:#fff; border-radius:8px; border:1px solid var(--border)">
+            <div style="display:flex; gap:10px">
+                <button class="btn btn-primary" style="flex:1" id="confirm-autorizar">AUTORIZAR</button>
+                <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-seguridad').classList.add('hidden')">VOLVER</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-global" class="modal hidden">
+        <div class="modal-content">
+            <h3 style="color:var(--primary); text-align:center; margin-bottom:15px">Obras Activas</h3>
+            <div id="lista-global" class="list-scroll"></div>
+            <button class="btn btn-danger" style="width:100%" onclick="document.getElementById('modal-global').classList.add('hidden')">Cerrar</button>
+        </div>
+    </div>
+
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
             <h3 id="m-title" style="margin-bottom:15px; color:var(--primary)">Trabajo</h3>
             <label>Descripción:</label>
-            <textarea id="r-descripcion" rows="3" placeholder="Detalle del problema..."></textarea>
-            <label>Técnico / Ejecutor:</label>
-            <input type="text" id="r-ejecutor" placeholder="Nombre del profesional">
+            <textarea id="r-descripcion" rows="3" style="width:100%; padding:10px; background:#1d2a33; color:#fff; border-radius:8px; border:1px solid var(--border); margin-bottom:10px"></textarea>
+            <label>Técnico:</label>
+            <input type="text" id="r-ejecutor" style="width:100%; padding:10px; background:#1d2a33; color:#fff; border-radius:8px; border:1px solid var(--border); margin-bottom:10px">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-                <div>
-                    <label>Estado:</label>
-                    <select id="r-estado">
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="En Proceso">En Proceso</option>
-                        <option value="Terminado">Terminado</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Responsable:</label>
-                    <select id="r-responsable">
-                        <option value="Consorcio">Consorcio</option>
-                        <option value="Propietario">Propietario</option>
-                        <option value="Empleado">Empleado</option>
-                    </select>
-                </div>
+                <select id="r-estado" style="padding:10px; background:#1d2a33; color:#fff; border-radius:8px">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En Proceso">En Proceso</option>
+                    <option value="Terminado">Terminado</option>
+                </select>
+                <select id="r-responsable" style="padding:10px; background:#1d2a33; color:#fff; border-radius:8px">
+                    <option value="Consorcio">Consorcio</option>
+                    <option value="Propietario">Propietario</option>
+                </select>
             </div>
             <div style="display:flex; gap:10px; margin-top:15px">
                 <button class="btn btn-danger" style="flex:1" onclick="window.closeModal()">Cerrar</button>
-                <button class="btn btn-success" style="flex:1" id="btn-guardar-principal">Guardar</button>
+                <button class="btn btn-success" style="flex:1" id="btn-save-action">Guardar</button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, getDoc, query, where, updateDoc, doc, addDoc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, orderBy, onSnapshot, query, where, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const CODIGO_MAESTRO = "4750"; 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo",
-            authDomain: "gestionuf-remoto.firebaseapp.com",
-            projectId: "gestionuf-remoto"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyDxw26xM3pliNxo79LdvWkr0uOGdvCgiIo", authDomain: "gestionuf-remoto.firebaseapp.com", projectId: "gestionuf-remoto" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         let departamentos = [];
-        let currentUFId = null;
-        let currentRepDocId = null;
+        let reparacionesGlobales = [];
+        let mapaDeptos = {};
+        let currentUFId, currentRepDocId, pendingAction;
 
-        window.onscroll = () => {
-            const btn = document.getElementById("btn-rocket");
-            btn.style.display = window.scrollY > 300 ? "flex" : "none";
-        };
+        // Lógica del botón cohete
+        window.onscroll = () => { document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none"; };
+
+        onSnapshot(collection(db, "reparaciones"), (snap) => {
+            reparacionesGlobales = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            document.getElementById("total-activas").innerText = reparacionesGlobales.filter(r => ["Pendiente", "En Proceso"].includes(r.estado)).length;
+            ejecutarBusqueda(); 
+        });
 
         window.loadData = async () => {
-            const list = document.getElementById("listado");
-            list.innerHTML = "<p style='text-align:center; padding:20px'>Cargando base de datos...</p>";
-            try {
-                const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
-                departamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                render(departamentos);
-            } catch (e) { console.error(e); }
+            const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
+            departamentos = snap.docs.map(d => {
+                const data = { id: d.id, ...d.data() };
+                mapaDeptos[d.id] = data;
+                return data;
+            });
+            render(departamentos);
         };
 
         function render(data) {
             const list = document.getElementById("listado");
-            list.innerHTML = data.length ? "" : "<p style='text-align:center; padding:20px'>No se encontraron coincidencias.</p>";
+            list.innerHTML = "";
             data.forEach(d => {
+                const repsUF = reparacionesGlobales.filter(r => r.id_uf === d.id);
+                let stClass = "";
+                if (repsUF.some(r => r.estado === "Pendiente")) stClass = "status-pendiente";
+                else if (repsUF.some(r => r.estado === "En Proceso")) stClass = "status-proceso";
+                else if (repsUF.length > 0 && repsUF.every(r => r.estado === "Terminado")) stClass = "status-terminado";
+
                 list.innerHTML += `
-                    <div class="card">
+                    <div class="card ${stClass}">
                         <div style="display:flex; justify-content:space-between; align-items:start">
                             <div>
                                 <h3 style="color:var(--primary)">UF ${d.UF}</h3>
-                                <p style="font-size:0.85em; color:#8696a0; margin-bottom:2px"><b>P:</b> ${d.Propietario || 'S/D'}</p>
+                                <p style="font-size:0.85em; color:#8696a0"><b>P:</b> ${d.Propietario || 'S/D'}</p>
                                 <p style="font-size:0.85em; color:#8696a0"><b>I:</b> ${d.Inquilino || 'S/D'}</p>
                             </div>
                             <div style="display:flex; gap:8px">
-                                <button class="btn btn-success" style="padding:8px 12px" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i></button>
+                                <button class="btn btn-success" style="padding:10px 15px" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-primary" style="padding:10px 15px" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i></button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -174,140 +202,87 @@
             });
         }
 
-        /* 🚀 FUNCIÓN DE BÚSQUEDA MANUAL */
         const ejecutarBusqueda = () => {
             const v = document.getElementById('search-input').value.toLowerCase().trim();
             if(!v) { render(departamentos); return; }
-            
-            const filtered = departamentos.filter(d => {
-                const uf = String(d.UF || "").toLowerCase();
-                const prop = String(d.Propietario || "").toLowerCase();
-                const inq = String(d.Inquilino || "").toLowerCase();
-                return uf.includes(v) || prop.includes(v) || inq.includes(v);
-            });
-            render(filtered);
-            window.scrollTo(0,0);
+            render(departamentos.filter(d => 
+                String(d.UF).includes(v) || 
+                String(d.Propietario || "").toLowerCase().includes(v) || 
+                String(d.Inquilino || "").toLowerCase().includes(v)
+            ));
         };
 
         document.getElementById('btn-do-search').onclick = ejecutarBusqueda;
-        
-        document.getElementById('search-input').onkeypress = (e) => {
-            if (e.key === 'Enter') {
-                ejecutarBusqueda();
-                document.getElementById('search-input').blur(); 
-            }
+        document.getElementById('search-input').onkeypress = (e) => { if (e.key === 'Enter') ejecutarBusqueda(); };
+
+        window.openGlobal = () => {
+            const list = document.getElementById("lista-global");
+            list.innerHTML = "";
+            reparacionesGlobales.filter(r => ["Pendiente", "En Proceso"].includes(r.estado)).forEach(r => {
+                const depto = mapaDeptos[r.id_uf] || { UF: '??', Propietario: '-', Inquilino: '-' };
+                list.innerHTML += `
+                    <div class="ficha-hub" style="border-left: 4px solid ${r.estado === 'Pendiente' ? 'var(--danger)' : 'var(--warning)'}">
+                        <div class="campo-hub"><span class="lbl-hub">UF:</span><span class="val-hub">${depto.UF}</span></div>
+                        <div class="campo-hub"><span class="lbl-hub">Prop:</span><span class="val-hub">${depto.Propietario || '-'}</span></div>
+                        <div class="campo-hub"><span class="lbl-hub">Inq:</span><span class="val-hub">${depto.Inquilino || '-'}</span></div>
+                        <div class="campo-hub" style="border:none"><span class="lbl-hub">Tarea:</span><span class="val-tarea">${r.descripcion}</span></div>
+                    </div>`;
+            });
+            document.getElementById("modal-global").classList.remove("hidden");
         };
 
-        /* ❌ BOTÓN LIMPIAR (X ROJA) */
-        document.getElementById("btn-clear").onclick = () => { 
-            document.getElementById("search-input").value = ""; 
-            render(departamentos); 
+        const solicitarSeguridad = (callback) => {
+            pendingAction = callback;
+            document.getElementById("input-maestro").value = "";
+            document.getElementById("modal-seguridad").classList.remove("hidden");
         };
 
-        /* 🔄 BOTÓN ACTUALIZAR (Refresca y limpia búsqueda) */
-        document.getElementById("btn-refresh").onclick = () => {
-            document.getElementById("search-input").value = ""; // Limpia el campo
-            window.loadData(); // Carga todo de nuevo
+        document.getElementById("confirm-autorizar").onclick = () => {
+            if(document.getElementById("input-maestro").value === CODIGO_MAESTRO) {
+                document.getElementById("modal-seguridad").classList.add("hidden");
+                if(pendingAction) pendingAction();
+            } else { alert("Incorrecto"); }
         };
 
-        /* --- ACCIONES DE FIREBASE --- */
-        window.openNew = (id, uf) => {
-            currentUFId = id; currentRepDocId = null;
-            document.getElementById("m-title").innerText = "Nueva Tarea UF " + uf;
-            document.getElementById("r-descripcion").value = "";
-            document.getElementById("r-ejecutor").value = "";
-            document.getElementById("r-estado").value = "Pendiente";
-            document.getElementById("r-responsable").value = "Consorcio";
-            document.getElementById("modal-edit").classList.remove("hidden");
-        };
-
-        window.editSpecific = async (docId, uf) => {
-            currentRepDocId = docId;
-            document.getElementById("m-title").innerText = "Modificar - UF " + uf;
-            try {
-                const docSnap = await getDoc(doc(db, "reparaciones", docId));
-                if (docSnap.exists()) {
-                    const r = docSnap.data();
-                    currentUFId = r.id_uf;
-                    document.getElementById("r-descripcion").value = r.descripcion || "";
-                    document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                    document.getElementById("r-estado").value = r.estado || "Pendiente";
-                    document.getElementById("r-responsable").value = r.responsable || "Consorcio";
-                    document.getElementById("modal-edit").classList.remove("hidden");
-                }
-            } catch (e) { alert("Error al cargar datos."); }
-        };
-
-        window.deleteRep = async (docId, ufId) => {
-            if(!confirm("¿Eliminar este registro?")) return;
-            const pass = prompt("Código Maestro:");
-            if(pass !== CODIGO_MAESTRO) { alert("Incorrecto."); return; }
-            try {
-                await deleteDoc(doc(db, "reparaciones", docId));
-                alert("Eliminado.");
-                window.loadData();
-            } catch (e) { alert("Error."); }
-        };
-
-        window.saveRep = async () => {
-            const desc = document.getElementById("r-descripcion").value.trim();
-            if(!desc) { alert("Ingrese descripción."); return; }
-            const pass = prompt("Código Maestro:");
-            if(pass !== CODIGO_MAESTRO) { alert("Incorrecto."); return; }
-
-            const data = {
-                id_uf: currentUFId,
-                descripcion: desc,
-                ejecutor: document.getElementById("r-ejecutor").value.trim(),
-                estado: document.getElementById("r-estado").value,
-                responsable: document.getElementById("r-responsable").value,
-                fecha: new Date().toLocaleDateString()
-            };
-
-            try {
-                if (currentRepDocId) {
-                    await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
-                } else {
-                    await addDoc(collection(db, "reparaciones"), data);
-                }
+        document.getElementById("btn-save-action").onclick = () => {
+            solicitarSeguridad(async () => {
+                const data = {
+                    id_uf: currentUFId,
+                    descripcion: document.getElementById("r-descripcion").value,
+                    ejecutor: document.getElementById("r-ejecutor").value,
+                    estado: document.getElementById("r-estado").value,
+                    responsable: document.getElementById("r-responsable").value,
+                    fecha: new Date().toLocaleDateString()
+                };
+                if (currentRepDocId) await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
+                else await addDoc(collection(db, "reparaciones"), data);
                 window.closeModal();
-                window.loadData();
-            } catch (e) { alert("Error."); }
+            });
         };
 
-        document.getElementById("btn-guardar-principal").onclick = window.saveRep;
+        window.deleteRep = (docId) => solicitarSeguridad(async () => { await deleteDoc(doc(db, "reparaciones", docId)); });
+        window.openNew = (id, uf) => { currentUFId = id; currentRepDocId = null; document.getElementById("m-title").innerText = "Nueva UF " + uf; document.getElementById("r-descripcion").value = ""; document.getElementById("modal-edit").classList.remove("hidden"); };
         window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
 
         window.verHist = async (id, uf) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "<p style='font-size:0.8em; text-align:center; color:#aaa'>Buscando...</p>";
-                try {
-                    const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
-                    const snap = await getDocs(q);
-                    el.innerHTML = snap.empty ? "<p style='font-size:0.8em; text-align:center; color:var(--warning)'>Sin registros.</p>" : "";
-                    snap.forEach(ds => {
-                        const r = ds.data();
-                        const cl = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
-                        el.innerHTML += `
-                            <div class="hist-item ${cl}">
-                                <div style="display:flex; justify-content:space-between; align-items:center">
-                                    <div style="flex:1; padding-right:10px">
-                                        <b>${r.fecha}</b> - ${r.descripcion}<br>
-                                        <small style="color:#aaa">Resp: ${r.responsable} | Téc: ${r.ejecutor || '-'}</small>
-                                    </div>
-                                    <div style="display:flex; gap:5px">
-                                        <button class="btn btn-primary" style="padding:6px 10px; font-size:0.8em" onclick="window.editSpecific('${ds.id}', '${uf}')"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-danger" style="padding:6px 10px; font-size:0.8em" onclick="window.deleteRep('${ds.id}', '${id}')"><i class="fas fa-trash"></i></button>
-                                    </div>
-                                </div>
-                            </div>`;
-                    });
-                } catch (e) { el.innerHTML = "Error."; }
+                const snap = reparacionesGlobales.filter(r => r.id_uf === id);
+                el.innerHTML = snap.length ? "" : "<p style='font-size:0.8em; color:var(--warning)'>Sin registros.</p>";
+                snap.forEach(r => {
+                    const cl = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
+                    el.innerHTML += `<div class="hist-item ${cl}">
+                        <div style="display:flex; justify-content:space-between; align-items:center">
+                            <small>${r.fecha} - ${r.descripcion}</small>
+                            <button class="btn btn-danger" style="padding:4px 8px" onclick="window.deleteRep('${r.id}')"><i class="fas fa-trash"></i></button>
+                        </div></div>`;
+                });
             }
         };
 
+        document.getElementById("btn-clear").onclick = () => { document.getElementById("search-input").value = ""; ejecutarBusqueda(); };
+        document.getElementById("btn-refresh").onclick = () => loadData();
         window.loadData();
     </script>
 </body>
